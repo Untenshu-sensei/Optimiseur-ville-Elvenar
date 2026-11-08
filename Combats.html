@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title> Combats </title>
+<style>
+:root{--bg:#f6f1e9;--c:#fff;--t:#2b2118;--a:#7a4b1e;--p:#fde4cf;--m:#6d5e50}
+@media(prefers-color-scheme:dark){:root{--bg:#1d1812;--c:#2a231b;--t:#f1e8da;--a:#e0a860;--m:#b5a692}}
+body{margin:0;font:var(--fs,16px)/var(--lh,1.45) var(--ff,Arial,sans-serif);letter-spacing:var(--ls,0);background:var(--bg);color:var(--t)}
+main{max-width:900px;margin:auto;padding:10px}
+h1{font-size:1.3em;margin:6px 0}
+h2{font-size:1.05em;margin:0 0 8px;color:var(--a)}
+h3{font-size:.97em;margin:14px 0 6px;color:var(--a)}
+.card{background:var(--c);border-radius:10px;padding:12px;margin:10px 0;box-shadow:0 1px 3px #0003}
+input,select,button{font:inherit;padding:8px 10px;border-radius:6px;border:1px solid #0004;margin:2px}
+input,select{background:var(--p);color:#1d1d1f}
+button{background:var(--a);color:#fff;border:0;cursor:pointer}
+button.s{background:#0002;color:var(--t)}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.m{color:var(--m)}
+.pill{display:inline-block;padding:1px 8px;border-radius:10px;background:#0002;font-size:.75em}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:2px 12px}
+.g label{display:flex;align-items:center;gap:7px;padding:1px 0;line-height:1.15}
+.g label .nm{display:flex;flex-direction:column}
+.g label small{font-size:.75em;opacity:.85;white-space:nowrap}
+.g input{flex:0 0 auto}
+.b{display:inline-block;padding:2px 10px;border-radius:12px;font-weight:700;color:#fff}
+.e3{background:#2e7d32}.e2{background:#7cb342;color:#111}.e1{background:#f9a825;color:#111}.e0{background:#c62828}
+.V{font-size:1.12em;text-align:center;padding:14px;border-radius:10px;color:#fff;font-weight:700}
+.vF{background:#2e7d32}.vS{background:#f9a825;color:#111}.vR{background:#c62828}.vN{background:#5c5248}
+.hc{--bg:#000;--c:#111;--t:#fff;--a:#ffd24a;--m:#e0e0e0;--p:#fff}
+.sugg{background:var(--p);color:#1d1d1f;border-left:4px solid var(--a);border-radius:8px;padding:8px 10px;margin:10px 0;font-size:.92em}
+.wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:.9em;margin-top:6px}
+.tbl th,.tbl td{padding:5px 6px;border-bottom:1px solid #0001;text-align:left;vertical-align:top}
+.tbl th{color:var(--a);font-weight:600;font-size:.95em}
+.perdu{text-decoration:line-through;opacity:.65}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<datalist id="dl"></datalist>
+<script>
+"use strict";
+
+/* =========================================================================
+   1 · TABLE DE FORCES
+   RATE[ligne de MON unité][classe de l'ENNEMI]
+   Classes : 0 Mêlée légère · 1 Portée légère · 2 Mage · 3 Mêlée lourde · 4 Portée lourde
+   ========================================================================= */
+var RATE={
+  "Danse lame/Barbare":["Bon","Très bon","Excellent","Mauvais","Mauvais"],
+  "Archer/Arbalétrier":["Mauvais","Bon","Très bon","Excellent","Mauvais"],
+  "Sorcière/Prêtre":["Mauvais","Mauvais","Bon","Très bon","Très bon"],
+  "Tréant/Paladin":["Bon","Mauvais","Mauvais","Bon","Très bon"],
+  "Golem/Mortier":["Très bon","Bon","Mauvais","Mauvais","Bon"],
+  "Cerbère":["Bon","Bon","Très bon","Mauvais","Mauvais"],
+  "Dryade":["Mauvais","Bon","Bon","Excellent","Mauvais"],
+  "Banshee":["Mauvais","Mauvais","Bon","Bon","Excellent"],
+  "Guerrier orc":["Excellent","Mauvais","Mauvais","Bon","Bon"],
+  "Stratège orc":["Bon","Excellent","Mauvais","Mauvais","Bon"],
+  "Chevaucheur ailé":["Bon","Excellent","Bon","Mauvais","Mauvais"],
+  "Ranger":["Mauvais","Bon","Excellent","Très bon","Mauvais"],
+  "Mage fleuri":["Mauvais","Mauvais","Bon","Excellent","Très bon"],
+  "Garde vallorien":["Bon","Mauvais","Mauvais","Bon","Excellent"],
+  "Grenouille fainéante":["Excellent","Très bon","Mauvais","Mauvais","Bon"]
+};
+
+var CLS=["Mêlée légère","Portée légère","Mage","Mêlée lourde","Portée lourde"];
+var NOTE=["Mauvais","Bon","Très bon","Excellent"];
+var SC={"Excellent":3,"Très bon":2,"Bon":1,"Mauvais":0};
+var CC={3:"e3",2:"e2",1:"e1",0:"e0"};
+
+/* Mes unités : [nom, classe, race, ligne du tableau, variantes] */
+var OWN=[
+  ["Danse lame",0,"elfes","Danse lame/Barbare",["Danse lame II","Lame acrobate"]],
+  ["Archer",1,"elfes","Archer/Arbalétrier",["Archer II","Archer d'élite","Archer d'élite II"]],
+  ["Sorcière",2,"elfes","Sorcière/Prêtre",["Sorcière II","Sorcière bourgeonnante"]],
+  ["Tréant",3,"elfes","Tréant/Paladin",["Tréant II","Tréant aîné","Treant aîné II"]],
+  ["Golem",4,"elfes","Golem/Mortier",["Golem II","Golem de granit"]],
+  ["Barbare à hache",0,"humains","Danse lame/Barbare",["Barbare à hache II","Barbare enragé"]],
+  ["Arbalétrier",1,"humains","Archer/Arbalétrier",["Arbalétrier II","Maître arbalétrier","Maître arbalétrier II"]],
+  ["Prêtre",2,"humains","Sorcière/Prêtre",["Prêtre II","Prêtre sacré"]],
+  ["Paladin",3,"humains","Tréant/Paladin",["Paladin II","Saint Paladin","Saint paladin II"]],
+  ["Mortier",4,"humains","Golem/Mortier",["Mortier II","super Mortier"]],
+  ["Cerbère",0,"tous","Cerbère",["Sinistre cerbère"]],
+  ["Dryade",1,"tous","Dryade",["Dryade II","Dryade vénimeuse","Dryad","Dryad II"]],
+  ["Banshee",2,"tous","Banshee",["Banshee II","Épouvantable banshee"]],
+  ["Guerrier orc",3,"tous","Guerrier orc",["Guerrier orc II","Guerrier orc III"]],
+  ["Stratège orc",4,"tous","Stratège orc",["Stratège orc II","Sénior Orc Stratège","Sénior Orc Stratège II"]],
+  ["Chevaucheur ailé",0,"tous","Chevaucheur ailé",["Chevaucheur ailé II","Chevaucheur ailé venimeux","Chevaucheur ailé venimeux II"]],
+  ["Ranger",1,"tous","Ranger",["Ranger II","Garde forestier"]],
+  ["Mage fleuri",2,"tous","Mage fleuri",["Mage fleuri II","Mage fleuri III"]],
+  ["Garde vallorien",3,"tous","Garde vallorien",["Garde Vallorien II","Gardes vétérans"]],
+  ["Grenouille fainéante",4,"tous","Grenouille fainéante",["Grenouille fainéante II","Prince grenouille"]]
+];
+
+/* Unités rencontrées en province : [nom, classe, variantes] */
+var PROV=[
+  ["Voleur",0,["Voleur II","Vilain voleur"]],
+  ["Orc ancien",0,["Orc ancien II","Orc ancien brutal"]],
+  ["Chien de l'enfer",0,["Chien de l’enfer","Chien de l’enfer II","Chien de l’enfer furieux"]],
+  ["Archer farouche",1,["Archer farouche II","Archer sauvageon"]],
+  ["Bandit",1,["Bandit II","Bandit rusé"]],
+  ["Marche-brume",1,["Marche-brume II","Marche-brume sournois"]],
+  ["Enchanteresse",2,["Enchanteresse II","Enchanteresse démoniaque"]],
+  ["Abbé",2,["Abbé II","Sombre Abbé"]],
+  ["Mage de la rose",2,["Mage de la rose II","Mage de la rose flétrie"]],
+  ["Monstre des marais",3,["Monstre des marais II","Monstre des marais féroce"]],
+  ["Chevalier",3,["Chevalier II","Courageux chevalier"]],
+  ["Général orc",3,["Général orc II","Général orc mutant"]],
+  ["Rocambule",4,["Rocambule II","Rocambule inflexible"]],
+  ["Canonnier",4,["Canonnier II","Canonnier fou"]],
+  ["Déserteur orc",4,["Déserteur orc II","Déserteur orc crasseux"]]
+];
+
+var KNOWN=[];
+OWN.map(function(o){return [o[0],o[1],o[4]];}).concat(PROV).forEach(function(e){
+  [e[0]].concat(e[2]||[]).forEach(function(x){ KNOWN.push([x,e[1]]); });
+});
+
+/* =========================================================================
+   2 · OUTILS
+   ========================================================================= */
+function el(t,a){
+  var e=document.createElement(t);
+  if(a) for(var k in a){ if(k==="cls") e.className=a[k]; else e.setAttribute(k,a[k]); }
+  for(var i=2;i<arguments.length;i++){
+    var cs=arguments[i];
+    (Array.isArray(cs)?cs:[cs]).forEach(function(x){ if(x!=null&&x!=="") e.append(x); });
+  }
+  return e;
+}
+
+function norm(s){
+  return " "+String(s==null?"":s).toLowerCase().normalize("NFD")
+    .replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim()+" ";
+}
+
+/* Reconnaissance d'un nom d'ennemi (accents, majuscules et variantes tolérés) */
+function find(v){
+  var n=norm(v);
+  if(!n.trim()) return null;
+  var b=null;
+  KNOWN.forEach(function(x){
+    var k=norm(x[0]);
+    if(k.trim() && n.indexOf(k)>=0 && (!b || k.length>b[2].length)) b=[x[0],x[1],k];
+  });
+  return b;
+}
+
+/* =========================================================================
+   3 · ÉTAT (persistant, avec réparation des anciennes sauvegardes)
+   ========================================================================= */
+var KEY="elvCombats", DASH="Elvenar_Dashboard_Joueur_v0.10.html";
+
+function prof(){
+  var m=/[#&]p=([^&]+)/.exec(location.hash);
+  if(m) try{ return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1]))))); }catch(e){}
+  return null;
+}
+var PR=prof();
+
+function defaut(){
+  return {
+    have:{}, waves:[["","","","",""]],
+    army:["","","","",""], st:["ok","ok","ok","ok","ok"],
+    res:[], pairs:[], cur:0, fini:false,
+    race:(PR&&PR.race)||"elfes"
+  };
+}
+
+var S=defaut();
+try{
+  var raw=JSON.parse(localStorage.getItem(KEY));
+  if(raw && typeof raw==="object") S=Object.assign(S,raw);
+}catch(e){}
+
+if(!S.have || typeof S.have!=="object") S.have={};
+if(!Array.isArray(S.waves) || !S.waves.length) S.waves=[["","","","",""]];
+S.waves=S.waves.slice(0,3).map(function(w){ return Array.isArray(w)?w.slice(0,8):["","","","",""]; });
+if(!Array.isArray(S.army) || !S.army.length) S.army=["","","","",""];
+S.army=S.army.slice(0,8).map(function(x){ return x||""; });
+if(!Array.isArray(S.st)) S.st=[];
+while(S.st.length<S.army.length) S.st.push("ok");
+S.st=S.st.slice(0,S.army.length).map(function(x){ return (x==="bless"||x==="perdu")?x:"ok"; });
+if(!Array.isArray(S.res)) S.res=[];
+if(!Array.isArray(S.pairs)) S.pairs=[];
+S.cur=Math.max(0,Math.min(parseInt(S.cur,10)||0,S.waves.length-1));
+if(typeof S.race!=="string" || !S.race) S.race=(PR&&PR.race)||"elfes";
+
+/* Les escouades « perdues » sont retirées des effectifs (partie 1) puis de l'armée */
+function appliquerPertes(){
+  S.army.forEach(function(n,i){
+    if(n && S.st[i]==="perdu"){
+      var q=parseInt(S.have[n],10);
+      if(!isNaN(q)) S.have[n]=String(Math.max(0,q-1));
+      S.army[i]="";
+    }
+  });
+}
+
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){} }
+
+var suivi=function(){ return S.suivi==="oui"; };
+var mine=function(){ return OWN.filter(function(o){ return o[2]==="tous" || o[2]===S.race; }); };
+var rowOf=function(n){
+  var o=OWN.filter(function(x){ return x[0]===n; })[0];
+  return o?o[3]:null;
+};
+var lignes=function(w){
+  return (S.waves[w]||[]).map(function(v){ return {v:v,f:find(v)}; })
+    .filter(function(x){ return !!x.f; });
+};
+
+/* =========================================================================
+   4 · MOTEUR DE RECOMMANDATION  (c'est ici que se trouvait le bug)
+   ========================================================================= */
+var FACT={ok:1,bless:0.6};
+
+/* Petit ajustement tiré des combats réellement joués (facultatif) */
+function adj(row,c){
+  if(!suivi()) return 0;
+  var w=0,l=0;
+  S.res.forEach(function(x){
+    (x.p||[]).forEach(function(p){
+      if(p[0]===row && p[1]===c){ if(x.r==="Victoire") w++; else l++; }
+    });
+  });
+  return (w-l)/(w+l+4);
+}
+
+/* Mes escouades déjà alignées et encore en état de combattre */
+function monArmee(){
+  var out=[];
+  S.army.forEach(function(n,i){
+    if(!n) return;
+    var o=OWN.filter(function(x){ return x[0]===n; })[0];
+    if(!o) return;
+    if(S.st[i]==="perdu") return;
+    out.push({n:n,row:o[3],cls:o[1],src:"armee",i:i,st:S.st[i]||"ok",stock:parseInt(S.have[n],10)||0});
+  });
+  return out;
+}
+
+/* Unités en réserve (effectif saisi, pas encore alignées) */
+function enStock(){
+  var out=[];
+  mine().forEach(function(o){
+    var q=parseInt(S.have[o[0]],10)||0;
+    if(q>0 && S.army.indexOf(o[0])<0) out.push({n:o[0],row:o[3],cls:o[1],src:"stock",st:"ok",stock:q});
+  });
+  return out;
+}
+
+/* Dernier recours : toutes les unités de ma race (aucun effectif saisi) */
+function toutesMesUnites(){
+  var out=[];
+  mine().forEach(function(o){
+    if(S.army.indexOf(o[0])>=0) return;
+    out.push({n:o[0],row:o[3],cls:o[1],src:"libre",st:"ok",stock:0});
+  });
+  return out;
+}
+
+/* Vivier de choix : armée alignée > réserves saisies > toutes mes unités.
+   C'est ce repli qui manquait : sans effectif saisi, l'outil ne proposait rien. */
+function candidates(){
+  /* en cours de combat, on ne peut plus changer d'unité : seules comptent
+     les escouades réellement alignées */
+  if(combatEngage()) return monArmee();
+  var a=monArmee(), s=enStock();
+  if(a.length || s.length) return a.concat(s);
+  return toutesMesUnites();
+}
+
+function scoreOf(k,c){
+  var row=RATE[k.row];
+  if(!row || row[c]===undefined) return -99;
+  var f=FACT[k.st]; if(f===undefined) f=1;
+  return SC[row[c]]*f + adj(k.row,c);
+}
+
+/* Meilleure de mes unités contre la classe c + l'escouade déjà alignée pour cette classe */
+function bestFor(c){
+  var best=null, cur=null;
+  candidates().forEach(function(k){
+    var s=scoreOf(k,c);
+    if(s<=-99) return;
+    if(!best || s>best.s) best={n:k.n,row:k.row,cls:k.cls,src:k.src,i:k.i,stock:k.stock,s:s,r:RATE[k.row][c]};
+    if(k.src==="armee" && (!cur || s>cur.s)) cur={n:k.n,row:k.row,s:s,r:RATE[k.row][c],i:k.i};
+  });
+  return {best:best,cur:cur};
+}
+
+/* Toutes les classes d'ennemis présentes, toutes vagues confondues */
+function classesEnJeu(){
+  var L=[];
+  S.waves.forEach(function(w,wi){
+    lignes(wi).forEach(function(x){ L.push({c:x.f[1],nom:x.v}); });
+  });
+  return L;
+}
+
+/* Les ennemis vague par vague : l'armée reste la même pour tout le combat */
+function ennemisParVague(){
+  var V=[];
+  S.waves.forEach(function(w,wi){
+    var L=lignes(wi);
+    if(!L.length) return;
+    V.push({wi:wi, L:L.map(function(x){ return {c:x.f[1],nom:x.v}; })});
+  });
+  return V;
+}
+
+/* Un combat est engagé dès qu'une vague est validée : les escouades sont figées */
+function combatEngage(){ return S.cur>0 || (S.pairs && S.pairs.length>0) || !!S.fini; }
+
+/* Meilleure composition possible pour TENIR TOUTES LES VAGUES avec les mêmes
+   escouades (on ne peut pas changer d'unité en cours de combat).
+   On teste toutes les combinaisons de N unités parmi celles que vous possédez
+   et on garde celle qui maximise la PIRE des vagues (puis la moyenne) :
+   une armée doit d'abord ne pas craquer sur la vague la plus difficile. */
+var _sugCle=null,_sugVal=null;
+function suggestion(){
+  var cle=JSON.stringify([S.waves,S.have,S.army,S.st,S.race]);
+  if(cle===_sugCle) return _sugVal;
+  _sugCle=cle;
+  _sugVal=calcSuggestion();
+  return _sugVal;
+}
+
+function calcSuggestion(){
+  var V=ennemisParVague();
+  if(!V.length) return null;
+
+  var pool=[], dispo=false;
+  mine().forEach(function(o){
+    var q=parseInt(S.have[o[0]],10)||0;
+    if(q>0){ dispo=true; pool.push({n:o[0],row:o[3],stock:q}); }
+  });
+  if(!pool.length){
+    mine().forEach(function(o){ pool.push({n:o[0],row:o[3],stock:0}); });
+    dispo=false;
+  }
+  if(!pool.length) return null;
+
+  /* nombre d'escouades à composer ; une même unité peut revenir plusieurs fois,
+     dans la limite de l'effectif saisi (sans effectif saisi : pas de limite) */
+  var total=0;
+  pool.forEach(function(o){ total+=dispo?o.stock:99; });
+  var k=Math.min(S.army.length,total);
+  var maxCopies=function(i){ return dispo?pool[i].stock:k; };
+  var compte=function(idx,i){ var c=0; idx.forEach(function(x){ if(x===i) c++; }); return c; };
+
+  /* notes de chaque unité candidate, pour chaque ennemi de chaque vague */
+  var note=pool.map(function(o){
+    return V.map(function(v){
+      return v.L.map(function(x){ return SC[RATE[o.row][x.c]]; });
+    });
+  });
+
+  var testees=0;
+  var evalIdx=function(idx){
+    testees++;
+    var par=[], pire=99, tot=0;
+    for(var w=0;w<V.length;w++){
+      var M=V[w].L.map(function(x,e){ return idx.map(function(u){ return note[u][w][e]; }); });
+      var r=repartir(M,k);
+      var moy=r.sc.reduce(function(p,q){ return p+q; },0)/V[w].L.length;
+      par.push(moy); tot+=moy; if(moy<pire) pire=moy;
+    }
+    var bonus=0;
+    idx.forEach(function(u){ if(S.army.indexOf(pool[u].n)>=0) bonus+=0.0001; });
+    return {par:par,pire:pire,moy:tot/V.length,cle:pire*1000+tot/V.length+bonus};
+  };
+
+  /* construction pas à pas depuis chaque unité de départ possible, puis
+     améliorations par remplacement d'une escouade tant que cela aide */
+  var best=null;
+  var essai=function(depart){
+    var idx=[];
+    if(depart>=0) idx.push(depart);
+    while(idx.length<k){
+      var bi=-1, bc=null;
+      for(var i=0;i<pool.length;i++){
+        if(compte(idx,i)>=maxCopies(i)) continue;
+        var c=evalIdx(idx.concat([i]));
+        if(!bc || c.cle>bc.cle){ bc=c; bi=i; }
+      }
+      if(bi<0) break;
+      idx.push(bi);
+    }
+    if(!idx.length) return;
+    var cur=evalIdx(idx), mieux=true, garde=0;
+    while(mieux && garde++<30){
+      mieux=false;
+      for(var p=0;p<idx.length;p++){
+        for(var i2=0;i2<pool.length;i2++){
+          if(i2===idx[p]) continue;
+          var t=idx.slice(); t[p]=i2;
+          if(compte(t,i2)>maxCopies(i2)) continue;
+          var c2=evalIdx(t);
+          if(c2.cle>cur.cle+1e-9){ idx=t; cur=c2; mieux=true; }
+        }
+      }
+    }
+    if(!best || cur.cle>best.cle) best={cle:cur.cle,idx:idx.slice(),par:cur.par};
+  };
+  essai(-1);
+  for(var d=0;d<pool.length;d++){ if(maxCopies(d)>0) essai(d); }
+  if(!best) return null;
+
+  var choisis=best.idx.map(function(i){ return pool[i].n; });
+
+  /* on remet les escouades déjà en place à leur place, puis on complète */
+  var slots=S.army.map(function(){ return ""; });
+  var reste=choisis.slice();
+  S.army.forEach(function(nm,i){
+    var pos=reste.indexOf(nm);
+    if(pos>=0){ slots[i]=nm; reste.splice(pos,1); }
+  });
+  for(var i3=0;i3<slots.length && reste.length;i3++){
+    if(!slots[i3]) slots[i3]=reste.shift();
+  }
+
+  return {arm:slots, reserve:!dispo, vagues:V.length, par:best.par, testees:testees};
+}
+
+/* Escouades fictives à partir d'une liste de noms (pour évaluer une proposition) */
+function armFromNames(noms){
+  var out=[];
+  (noms||[]).forEach(function(n){
+    var row=rowOf(n);
+    if(row) out.push({n:n,row:row,st:"ok"});
+  });
+  return out;
+}
+
+/* Tableau de tenue du combat, vague par vague, pour une armée donnée */
+function tableBilan(arm, titre, vagueCourante){
+  var bil=[];
+  S.waves.forEach(function(wv,wi){
+    if(!lignes(wi).length) return;
+    var vv=verdict(wi,arm);
+    if(vv && !vv.vide) bil.push({wi:wi,v:vv});
+  });
+  if(bil.length<2) return null;
+
+  var pire=bil[0];
+  bil.forEach(function(b){ if(b.v.a<pire.v.a) pire=b; });
+
+  var tb=el("table",{cls:"tbl"});
+  tb.append(el("tr",{},el("th",{},"Vague"),el("th",{},"Verdict"),el("th",{},"Escouades en état")));
+  bil.forEach(function(b){
+    tb.append(el("tr",{},
+      el("td",{},(b.wi+1)+(b.wi===vagueCourante?" (en cours)":"")),
+      el("td",{},el("span",{cls:"b "+({F:"e3",S:"e1",R:"e0"})[b.v.v]},{F:"FAVORABLE",S:"SERRÉ",R:"TRÈS RISQUÉ"}[b.v.v])),
+      el("td",{cls:"m"},b.v.left+" escouade(s)")));
+  });
+
+  var bloc=el("div",{},el("h3",{},titre),el("div",{cls:"wrap"},tb));
+  bloc.append(el("p",{cls:"m"},
+    pire.v.v==="F"
+      ? "Cette composition tient les "+bil.length+" vagues ; la plus juste reste la vague "+(pire.wi+1)+"."
+      : "Vos escouades ne changent pas d’une vague à l’autre : le point faible du combat est la vague "+(pire.wi+1)+
+        " ("+({F:"favorable",S:"serré",R:"très risqué"})[pire.v.v]+"). Choisissez vos unités pour tenir cet enchaînement, pas seulement la vague en cours."));
+  return bloc;
+}
+
+/* Point fort d'une unité face aux ennemis présents */
+function contreInfo(nom){
+  var row=rowOf(nom); if(!row) return null;
+  var L=classesEnJeu(); if(!L.length) return null;
+  var bc=-1, bs=-1;
+  L.forEach(function(x){ var s=SC[RATE[row][x.c]]; if(s>bs){ bs=s; bc=x.c; } });
+  if(bc<0) return null;
+  var noms=[];
+  L.forEach(function(x){ if(x.c===bc && noms.indexOf(x.nom)<0) noms.push(x.nom); });
+  return {c:bc, note:NOTE[bs], noms:noms};
+}
+
+/* Répartition des ennemis d'une vague entre mes escouades.
+   Une escouade ne peut s'occuper que d'un nombre limité d'ennemis (répartition équitable) :
+   face à 3 mages, une seule Banshee ne suffit pas, deux sont mieux.
+   M[e][j] = note de l'escouade j contre l'ennemi e ; n = nombre d'escouades prévues. */
+function repartir(M,n){
+  var E=M.length, cap=Math.ceil(E/Math.max(1,n)), P=[], qui=[], charge=[], sc=[];
+  for(var e=0;e<E;e++){
+    qui.push(-1); sc.push(0);
+    for(var j=0;j<M[e].length;j++) P.push([M[e][j],e,j]);
+  }
+  P.sort(function(a,b){ return (b[0]-a[0]) || (a[1]-b[1]) || (a[2]-b[2]); });
+  P.forEach(function(t){
+    if(qui[t[1]]>=0) return;
+    if((charge[t[2]]||0)>=cap) return;
+    qui[t[1]]=t[2]; charge[t[2]]=(charge[t[2]]||0)+1; sc[t[1]]=t[0];
+  });
+  return {qui:qui,sc:sc};
+}
+
+/* Verdict pour la vague w, sur une armée donnée (par défaut la mienne) */
+function verdict(w, armeeForcee){
+  var L=lignes(w);
+  if(!L.length) return null;
+  var arm=armeeForcee||monArmee();
+  if(!arm.length) return {vide:true};
+  var M=L.map(function(x){ return arm.map(function(k){ return scoreOf(k,x.f[1]); }); });
+  var r=repartir(M,arm.length);
+  var pairs=[];
+  L.forEach(function(x,e){ if(r.qui[e]>=0) pairs.push([arm[r.qui[e]].row,x.f[1]]); });
+  var a=r.sc.reduce(function(p,q){ return p+q; },0)/L.length;
+  return {a:a,pairs:pairs,v:(a>=1.8?"F":(a>=0.9?"S":"R")),left:arm.length};
+}
+
+/* =========================================================================
+   5 · INTERFACE
+   ========================================================================= */
+var ACC0={fs:16,ls:0,lh:1.45,ff:"Arial,sans-serif",hc:false};
+var A=ACC0;
+try{ A=Object.assign({},ACC0,(PR&&PR.acc)||JSON.parse(localStorage.getItem("elvAcc"))||{}); }catch(e){}
+
+function applyAcc(a){
+  var r=document.documentElement;
+  r.style.setProperty("--fs",a.fs+"px");
+  r.style.setProperty("--ls",a.ls+"px");
+  r.style.setProperty("--lh",a.lh);
+  r.style.setProperty("--ff",a.ff);
+  r.classList.toggle("hc",!!a.hc);
+}
+applyAcc(A);
+
+function speak(){
+  var s=window.speechSynthesis;
+  if(!s) return alert("Lecture à voix haute non disponible.");
+  if(s.speaking){ s.cancel(); return; }
+  var u=new SpeechSynthesisUtterance(document.getElementById("app").innerText);
+  u.lang="fr-FR"; s.speak(u);
+}
+
+var updaters=[], dernierV={v:"S",a:0};
+function maj(){
+  updaters.forEach(function(f){ try{ f(); }catch(e){} });
+  res();
+}
+
+function mk(t,f){ var b=el("button",{cls:"s"},t); b.onclick=f; return b; }
+
+/* --- retour visuel sous chaque nom d'ennemi --- */
+function adviceNodes(v){
+  if(!String(v||"").trim()) return [];
+  var f=find(v);
+  if(!f) return [el("span",{cls:"b e1"},"nom non reconnu")];
+  var c=f[1], r=bestFor(c);
+  var out=[el("span",{cls:"m"},"→ "+CLS[c]+" · ")];
+  if(!r.best){
+    out.push(el("span",{cls:"b e0"},"aucune de vos unités"));
+    return out;
+  }
+  out.push(el("b",{},r.best.n+" "), el("span",{cls:"b "+CC[SC[r.best.r]]},r.best.r));
+  out.push(el("span",{cls:"m"},
+    r.best.src==="armee" ? " (escouade "+(r.best.i+1)+")"
+    : r.best.src==="stock" ? " (en stock : "+r.best.stock+")"
+    : " (effectif non indiqué)"));
+  if(r.cur && r.cur.n!==r.best.n){
+    out.push(el("span",{cls:"m"}," · aligné : "+r.cur.n+" "), el("span",{cls:"b "+CC[SC[r.cur.r]]},r.cur.r));
+  }
+  return out;
+}
+
+function render(){
+  updaters=[];
+  var app=document.getElementById("app");
+  app.replaceChildren();
+  app.append(el("h1",{},"Elvenar · Assistant Combats ",el("span",{cls:"pill"},"v0.6")));
+
+  var sv=function(){ applyAcc(A); try{ localStorage.setItem("elvAcc",JSON.stringify(A)); }catch(e){} };
+  var barre=el("div",{cls:"card row"});
+  barre.append(mk("⬅ Tableau de bord",function(){ location.href=DASH; }));
+  barre.append(mk("A−",function(){ A.fs=Math.max(12,A.fs-2); sv(); }));
+  barre.append(mk("A+",function(){ A.fs=Math.min(30,A.fs+2); sv(); }));
+  barre.append(mk("🔊 Lire",speak));
+  barre.append(mk("◐ Contraste",function(){ A.hc=!A.hc; sv(); }));
+  app.append(barre);
+
+  document.getElementById("dl").replaceChildren.apply(document.getElementById("dl"),
+    KNOWN.map(function(x){ return el("option",{value:x[0]}); }));
+
+  /* ---------- 1 · Mes unités ---------- */
+  var rs=el("select",{});
+  [["elfes","Elfes"],["humains","Humains"]].forEach(function(x){ rs.append(el("option",{value:x[0]},x[1])); });
+  rs.value=S.race;
+  rs.onchange=function(){
+    S.race=rs.value;
+    S.army=S.army.map(function(n){
+      var o=OWN.filter(function(x){ return x[0]===n; })[0];
+      return (o && (o[2]==="tous"||o[2]===S.race))?n:"";
+    });
+    save(); render();
+  };
+
+  var grille=el("div",{cls:"g"});
+  mine().forEach(function(o){
+    var inp=el("input",{value:S.have[o[0]]||"",inputmode:"numeric",placeholder:"0",style:"width:70px"});
+    inp.oninput=function(){ S.have[o[0]]=inp.value; save(); maj(); };
+    grille.append(el("label",{},inp,el("span",{cls:"nm"},el("span",{},o[0]),el("small",{cls:"m"},CLS[o[1]]))));
+  });
+
+  var c1=el("div",{cls:"card"},el("h2",{},"1 · Mes unités : combien j’en ai"),el("div",{cls:"row"},"Ma race :",rs),grille);
+  c1.append(el("p",{cls:"m"},"Tapez l’effectif affiché dans le jeu (les unités II, III ou élite comptent avec leur unité de base). Laissez vide celles que vous n’avez pas."));
+  var total=0;
+  mine().forEach(function(o){ total+=parseInt(S.have[o[0]],10)||0; });
+  if(!total) c1.append(el("p",{cls:"m"},"Aucun effectif saisi : l’assistant travaille alors avec toutes les unités de votre race."));
+  app.append(c1);
+
+  /* ---------- 2 · Les ennemis ---------- */
+  var c2=el("div",{cls:"card"},el("h2",{},"2 · Les ennemis, vague par vague"),
+    el("p",{cls:"m"},"Choisissez ou tapez le nom vu dans le jeu : « Sombre Abbé », « Rocambule inflexible », « Grenouille fainéante »… sont reconnus. Indiquez toutes les vagues : la proposition tient compte de l’enchaînement."));
+
+  S.waves.forEach(function(w,wi){
+    c2.append(el("div",{style:"margin-top:8px"},
+      el("b",{},"Vague "+(wi+1)+(wi===S.cur&&!S.fini?"  ◀ en cours":(wi<S.cur?"  ✔ terminée":"")))));
+    w.forEach(function(v,i){
+      var inp=el("input",{list:"dl",value:v,placeholder:"Unité ennemie",style:"width:230px"});
+      var out=el("span",{});
+      var up=function(){ out.replaceChildren.apply(out,adviceNodes(w[i])); };
+      updaters.push(up);
+      inp.oninput=function(){ w[i]=inp.value; save(); maj(); };
+      up();
+      c2.append(el("div",{cls:"row"},inp,out));
+    });
+    var ad=el("button",{cls:"s"},"+ un ennemi");
+    ad.onclick=function(){ if(w.length<8){ w.push(""); save(); render(); } };
+    c2.append(ad);
+  });
+
+  var ligneV=el("div",{cls:"row"});
+  if(S.waves.length<3){
+    var nw=el("button",{cls:"s"},"+ Ajouter la vague "+(S.waves.length+1));
+    nw.onclick=function(){ S.waves.push(["","","","",""]); save(); render(); };
+    ligneV.append(nw);
+  }
+  var rz=el("button",{cls:"s"},"↺ Nouveau combat (efface les ennemis)");
+  rz.onclick=function(){
+    appliquerPertes();
+    S.waves=[["","","","",""]]; S.st=S.st.map(function(){return "ok";});
+    S.cur=0; S.pairs=[]; S.fini=false; save(); render();
+  };
+  ligneV.append(rz);
+  c2.append(ligneV);
+  app.append(c2);
+
+  /* ---------- 3 · Mon armée ---------- */
+  var c3=el("div",{cls:"card"},el("h2",{},"3 · Mon armée : la même pour toutes les vagues"),
+    el("p",{cls:"m"},"Vos escouades combattent toutes les vagues à la suite sans pouvoir être changées : la proposition est calculée pour cet enchaînement. C’est vous qui validez — les calculs suivent votre composition, pas la mienne. Vous pouvez aligner plusieurs fois la même unité (dans la limite de votre stock) : les ennemis d’une vague sont répartis équitablement entre vos escouades."));
+
+  S.army.forEach(function(n,i){
+    var sel=el("select",{});
+    sel.append(el("option",{value:""},"— aucune —"));
+    mine().forEach(function(o){
+      sel.append(el("option",{value:o[0]},o[0]+" ("+CLS[o[1]]+") — "+(parseInt(S.have[o[0]],10)||0)+" en stock"));
+    });
+    sel.value=n||"";
+    sel.onchange=function(){ S.army[i]=sel.value; S.st[i]="ok"; save(); render(); };
+    var etat=el("span",{cls:S.st[i]==="perdu"?"m perdu":"m"},
+      S.st[i]==="perdu"?"perdue":(S.st[i]==="bless"?"affaiblie":""));
+    var nbAl=S.army.filter(function(x){ return x===n; }).length, enS=parseInt(S.have[n],10);
+    if(n && !isNaN(enS) && nbAl>enS) etat.append(el("span",{cls:"b e0"}," attention : "+nbAl+" escouades alignées, "+enS+" seulement en stock"));
+    c3.append(el("div",{cls:"row"},"Escouade "+(i+1)+" :",sel,etat));
+  });
+
+  /* proposition de départ, visible en permanence (et mise à jour à la frappe) */
+  var zoneSugg=el("div",{id:"sugg"});
+  c3.append(zoneSugg);
+  var majSugg=function(){
+    zoneSugg.replaceChildren();
+    if(combatEngage()){
+      zoneSugg.append(el("p",{cls:"m"},"Combat engagé : vos escouades sont figées pour les vagues restantes. Les conseils ci-dessous ne s’appuient donc que sur celles que vous avez réellement alignées."));
+      return;
+    }
+    var sug=suggestion();
+    if(!sug) return;
+    var dejaIdentique = sug.arm.length===S.army.length &&
+      sug.arm.every(function(x,i){ return (x||"")===(S.army[i]||""); });
+    var bande=el("div",{cls:"sugg"});
+    bande.append(el("b",{},dejaIdentique?"Votre armée suit la proposition":"Proposition de départ"),
+      el("span",{cls:"m"}," (vous restez libre) — optimisée pour tenir "+(sug.vagues>1?sug.vagues+" vagues":"la vague")+" avec les mêmes escouades"));
+    var tb=el("table",{cls:"tbl"});
+    tb.append(el("tr",{},el("th",{},"Escouade"),el("th",{},"Unité"),el("th",{},"Point fort"),el("th",{},"Statut"),el("th",{},"Efficace sur")));
+    sug.arm.forEach(function(nom,i){
+      if(!nom){
+        tb.append(el("tr",{},el("td",{},"Escouade "+(i+1)),el("td",{cls:"m"},"—"),
+          el("td",{cls:"m"},"aucune unité adaptée disponible"),el("td",{},"")));
+        return;
+      }
+      var o=OWN.filter(function(x){ return x[0]===nom; })[0];
+      var ci=contreInfo(nom);
+      var stock=parseInt(S.have[nom],10)||0;
+      var deja=(S.army[i]||"")===nom;
+      var vUtiles=[];
+      ennemisParVague().forEach(function(v){
+        var ok=false;
+        v.L.forEach(function(x){ if(SC[RATE[o[3]][x.c]]>=2) ok=true; });
+        if(ok) vUtiles.push(v.wi+1);
+      });
+      var libPoly = !vUtiles.length ? "aucune"
+        : (vUtiles.length===1 ? "vague "+vUtiles[0]
+        : "vagues "+vUtiles.slice(0,-1).join(", ")+" et "+vUtiles[vUtiles.length-1]);
+      var statut = deja ? "déjà alignée" : (stock?("en stock : "+stock):(sug.reserve?"effectif non indiqué":""));
+      tb.append(el("tr",{},
+        el("td",{},"Escouade "+(i+1)),
+        el("td",{},el("b",{},nom),el("span",{cls:"m"}," ("+CLS[o[1]]+")")),
+        el("td",{}, ci?["Contre "+CLS[ci.c]+" ",el("span",{cls:"b "+CC[SC[ci.note]]},ci.note)].filter(Boolean):"—"),
+        el("td",{cls:"m"}, statut),
+        el("td",{cls:"m"}, "efficace : "+libPoly)
+      ));
+    });
+    bande.append(el("div",{cls:"wrap"},tb));
+
+    /* résultat attendu, vague par vague, avec cette composition */
+    var armP=armFromNames(sug.arm.filter(Boolean));
+    var attendu=[];
+    S.waves.forEach(function(wv,wi){
+      if(!lignes(wi).length) return;
+      var vv=verdict(wi,armP);
+      if(vv && !vv.vide) attendu.push({wi:wi,v:vv});
+    });
+    if(attendu.length>1){
+      var ligne=el("div",{style:"margin-top:8px"});
+      ligne.append(el("b",{},"Avec cette composition : "));
+      attendu.forEach(function(a,i){
+        if(i) ligne.append(el("span",{cls:"m"}," · "));
+        ligne.append(el("span",{cls:"m"},"vague "+(a.wi+1)+" "),
+          el("span",{cls:"b "+({F:"e3",S:"e1",R:"e0"})[a.v.v]},{F:"FAVORABLE",S:"SERRÉ",R:"TRÈS RISQUÉ"}[a.v.v]));
+      });
+      bande.append(ligne);
+    }
+    bande.append(el("p",{cls:"m"},"Composition cherchée en comparant "+sug.testees+" essais. Une même unité peut être proposée plusieurs fois si vous en avez assez en stock : chaque escouade ne s’occupe que de quelques ennemis."));
+
+    if(!dejaIdentique){
+      var ap=el("button",{},"Aligner cette armée");
+      ap.onclick=function(){
+        var cur=suggestion(); if(!cur) return;
+        S.army=S.army.map(function(_,i){ return cur.arm[i]||""; });
+        S.st=S.st.map(function(){ return "ok"; });
+        S.cur=0; S.pairs=[]; S.fini=false; save(); render();
+      };
+      bande.append(ap);
+    }
+    zoneSugg.append(bande);
+  };
+  updaters.push(majSugg);
+  majSugg();
+
+  var r3=el("div",{cls:"row"});
+  var pr=el("button",{},combatEngage()?"Combat engagé : armée figée":"Proposer une armée de départ");
+  pr.onclick=function(){
+    if(combatEngage()){ alert("Le combat est engagé : vos escouades ne peuvent plus être changées pour les vagues restantes."); return; }
+    var s=suggestion();
+    if(!s){ alert("Indiquez d’abord les ennemis d’une vague, puis réessayez."); return; }
+    S.army=S.army.map(function(_,i){ return s.arm[i]||""; });
+    S.st=S.st.map(function(){ return "ok"; });
+    S.cur=0; S.pairs=[]; S.fini=false; save(); render();
+  };
+  var pl=mk("+ une escouade",function(){ if(S.army.length<8){ S.army.push(""); S.st.push("ok"); save(); render(); } });
+  var mn=mk("− une escouade",function(){ if(S.army.length>1){ S.army.pop(); S.st.pop(); save(); render(); } });
+  r3.append(pr,pl,mn);
+  c3.append(r3);
+  app.append(c3);
+
+  /* ---------- 4 · Verdict ---------- */
+  app.append(el("div",{id:"res"}));
+  res();
+
+  /* ---------- 5 · Suivi ---------- */
+  app.append(carteSuivi());
+}
+
+function carteSuivi(){
+  var st=el("div",{cls:"card"},el("h2",{},"5 · Suivi de mes résultats (facultatif)"));
+  if(!S.suivi){
+    var oui=el("button",{},"Oui, garder mes résultats");
+    var non=el("button",{cls:"s"},"Non, ne rien enregistrer");
+    oui.onclick=function(){ S.suivi="oui"; save(); render(); };
+    non.onclick=function(){ S.suivi="non"; save(); render(); };
+    st.append(el("p",{},"Voulez-vous que l’outil retienne le résultat de vos combats pour affiner ses conseils à votre façon de jouer ? Tout reste sur cet appareil, rien n’est envoyé nulle part."),
+      el("div",{cls:"row"},oui,non));
+    return st;
+  }
+  if(S.suivi==="non"){
+    var on=el("button",{cls:"s"},"Activer le suivi");
+    on.onclick=function(){ S.suivi="oui"; save(); render(); };
+    st.append(el("p",{cls:"m"},"Suivi désactivé : rien n’est enregistré."),on);
+    return st;
+  }
+  if(S.fini){
+    var rec=function(r){
+      return function(){
+        appliquerPertes();
+        S.res.push({r:r,v:dernierV.v,a:dernierV.a,p:S.pairs.slice(),t:new Date().toLocaleDateString("fr-FR")});
+        S.pairs=[]; save();
+        S.waves=[["","","","",""]]; S.st=S.st.map(function(){return "ok";});
+        S.cur=0; S.fini=false; save(); render();
+      };
+    };
+    var win=el("button",{},"✔ J’ai gagné");
+    var los=el("button",{cls:"s"},"✖ J’ai perdu");
+    win.onclick=rec("Victoire");
+    los.onclick=rec("Défaite");
+    st.append(el("div",{cls:"row"},win,los));
+  }
+  var t=["F","S","R"].map(function(k){
+    var L=S.res.filter(function(x){ return x.v===k; });
+    var n=L.filter(function(x){ return x.r==="Victoire"; }).length;
+    return L.length ? {F:"FAVORABLE",S:"SERRÉ",R:"TRÈS RISQUÉ"}[k]+" : "+n+" victoire(s) sur "+L.length : null;
+  }).filter(Boolean);
+  st.append(el("p",{cls:"m"}, S.res.length
+    ? "Vos résultats : "+t.join(" · ")+". Plus vous en enregistrez, plus les choix d’unités se calent sur vos propres combats."
+    : "Aucun résultat enregistré pour l’instant. Le résultat se note à la fin du combat."));
+  var off=el("button",{cls:"s"},"Arrêter le suivi");
+  off.onclick=function(){ S.suivi="non"; save(); render(); };
+  var clr=el("button",{cls:"s"},"Effacer mes résultats");
+  clr.onclick=function(){ if(confirm("Effacer tous vos résultats ?")){ S.res=[]; save(); render(); } };
+  st.append(el("div",{cls:"row"},off,clr));
+  return st;
+}
+
+function res(){
+  var o=document.getElementById("res");
+  if(!o) return;
+  o.replaceChildren();
+
+  var w=Math.min(S.cur,S.waves.length-1);
+  var last=w>=S.waves.length-1;
+  var v=verdict(w);
+  if(v && !v.vide) dernierV={v:v.v,a:v.a};
+  var nbRen=0;
+  S.waves.forEach(function(wv,wi){ if(lignes(wi).length) nbRen++; });
+  var titreV="4 · Vague "+(w+1)+" sur "+S.waves.length+(nbRen<S.waves.length?" ("+nbRen+" renseignée"+(nbRen>1?"s":"")+")":"");
+  var c4=el("div",{cls:"card"},el("h2",{},S.fini?"4 · Combat terminé":titreV));
+
+  if(S.fini){
+    c4.append(el("p",{},"Le combat est terminé. Indiquez l’état final de chaque escouade : les escouades perdues seront retirées de vos effectifs (partie 1)."));
+    S.army.forEach(function(n,i){
+      if(!n) return;
+      var s2=el("select",{});
+      [["ok","en bon état"],["bless","affaiblie"],["perdu","perdue"]].forEach(function(x){ s2.append(el("option",{value:x[0]},x[1])); });
+      s2.value=S.st[i];
+      s2.onchange=function(){ S.st[i]=s2.value; save(); render(); };
+      c4.append(el("div",{cls:"row"},"Escouade "+(i+1)+" ("+n+") :",s2));
+    });
+    var pertes={};
+    S.army.forEach(function(n,i){ if(n && S.st[i]==="perdu") pertes[n]=(pertes[n]||0)+1; });
+    var lp=Object.keys(pertes).map(function(n){ return n+" × "+pertes[n]; });
+    c4.append(el("p",{cls:"m"}, lp.length
+      ? "Seront retirées de vos effectifs : "+lp.join(", ")+"."
+      : "Aucune escouade perdue : vos effectifs ne changent pas."));
+    var nc=el("button",{},"Enregistrer et lancer un nouveau combat");
+    nc.onclick=function(){
+      appliquerPertes();
+      S.waves=[["","","","",""]]; S.st=S.st.map(function(){return "ok";});
+      S.cur=0; S.pairs=[]; S.fini=false; save(); render();
+    };
+    c4.append(nc);
+    o.append(c4);
+    return;
+  }
+
+  if(!v){
+    c4.append(el("p",{cls:"m"},"Ajoutez les ennemis de cette vague pour obtenir le verdict."));
+  } else if(v.vide){
+    c4.append(el("div",{cls:"V vN"},"ARMÉE VIDE — aucune escouade alignée"));
+    var sv=suggestion();
+    if(sv){
+      c4.append(el("p",{},"Avec vos unités, contre ces ennemis : ",
+        el("b",{},sv.arm.filter(Boolean).join(" · ")),
+        el("span",{cls:"m"},sv.reserve?" (effectifs non saisis : proposition théorique)":"")));
+    } else {
+      c4.append(el("p",{cls:"m"},"Ajoutez d’abord les ennemis d’une vague : l’assistant vous proposera alors les unités de votre race les plus adaptées."));
+    }
+    var bp=el("button",{},"Proposer une armée de départ");
+    bp.onclick=function(){
+      var s=suggestion();
+      if(!s){ alert("Indiquez d’abord les ennemis d’une vague, puis réessayez."); return; }
+      S.army=S.army.map(function(_,i){ return s.arm[i]||""; });
+      S.st=S.st.map(function(){ return "ok"; });
+      S.cur=0; S.pairs=[]; S.fini=false; save(); render();
+    };
+    c4.append(bp);
+  } else {
+    var T3={F:["FAVORABLE","Poursuivez."],
+            S:["SERRÉ","Prudence : poursuivez seulement si vos escouades sont en bon état."],
+            R:["TRÈS RISQUÉ","Mieux vaut vous arrêter (ou négocier)."]}[v.v];
+    c4.append(el("div",{cls:"V v"+v.v},T3[0]+" — "+T3[1]));
+    c4.append(el("p",{cls:"m"},v.left+" escouade(s) encore en état de combattre."));
+  }
+
+  /* qui opposer à qui, pour la vague en cours */
+  var L=lignes(w);
+  if(L.length){
+    var tb=el("table",{cls:"tbl"});
+    tb.append(el("tr",{},el("th",{},"Ennemi"),el("th",{},"Classe"),el("th",{},"À opposer (mes unités)"),el("th",{},"Note"),el("th",{},"Où")));
+    L.forEach(function(x){
+      var c=x.f[1], r=bestFor(c), tr=el("tr",{});
+      tr.append(el("td",{},x.v),el("td",{cls:"m"},CLS[c]));
+      if(r.best){
+        var ou = r.best.src==="armee" ? "escouade "+(r.best.i+1)
+               : r.best.src==="stock" ? "en stock ("+r.best.stock+")"
+               : "à recruter";
+        var ouTd=el("td",{cls:"m"},ou);
+        if(r.cur && r.cur.n!==r.best.n){
+          ouTd.append(el("div",{cls:"m"},"aligné : "+r.cur.n+" "),el("span",{cls:"b "+CC[SC[r.cur.r]]},r.cur.r));
+        }
+        tr.append(el("td",{},el("b",{},r.best.n)),el("td",{},el("span",{cls:"b "+CC[SC[r.best.r]]},r.best.r)),ouTd);
+      } else {
+        tr.append(el("td",{cls:"m"},"—"),el("td",{},""),el("td",{cls:"m"},""));
+      }
+      tb.append(tr);
+    });
+    c4.append(el("h3",{},"Qui opposer à qui (vague "+(w+1)+")"),el("div",{cls:"wrap"},tb));
+  }
+
+  /* bilan sur l'ensemble du combat : mêmes escouades, elles s'usent vague après vague */
+  var blocBilan=null;
+  if(v && !v.vide){
+    blocBilan=tableBilan(monArmee(),"Tenir les vagues avec les mêmes escouades",w);
+  } else if(v && v.vide){
+    var sv2=suggestion();
+    if(sv2){
+      var armProp=armFromNames(sv2.arm.filter(Boolean));
+      blocBilan=tableBilan(armProp,"Avec cette proposition, sur l’ensemble du combat",w);
+    }
+  }
+  if(blocBilan) c4.append(blocBilan);
+
+  /* état des escouades + navigation */
+  if(v && !v.vide){
+    c4.append(el("h3",{},"Après ce combat, dans quel état sont mes escouades ?"));
+    S.army.forEach(function(n,i){
+      if(!n) return;
+      var s=el("select",{});
+      [["ok","en bon état"],["bless","affaiblie"],["perdu","perdue"]].forEach(function(x){ s.append(el("option",{value:x[0]},x[1])); });
+      s.value=S.st[i];
+      s.onchange=function(){ S.st[i]=s.value; save(); render(); };
+      c4.append(el("div",{cls:"row"},"Escouade "+(i+1)+" ("+n+") :",s));
+    });
+    var nx=el("button",{},last?"Terminer le combat":"Valider et passer à la vague "+(w+2));
+    var stp=el("button",{cls:"s"},"Je m’arrête ici");
+    nx.onclick=function(){
+      S.pairs=S.pairs.concat(v.pairs);
+      if(last) S.fini=true; else S.cur=w+1;
+      save(); render();
+    };
+    stp.onclick=function(){ S.pairs=S.pairs.concat(v.pairs); S.fini=true; save(); render(); };
+    c4.append(el("div",{cls:"row"},nx,stp));
+  }
+
+  o.append(c4);
+}
+
+render();
+</script>
+<!-- === MODULE DE LECTURE DU TABLEAU DE BORD (NE PAS MODIFIER EN DESSOUS) === -->
+<script>
+function checkGlobalCityData() {
+  try {
+    const rawData = localStorage.getItem('elvenar_shared_dashboard');
+    if(rawData) {
+      const data = JSON.parse(rawData);
+      let banner = document.getElementById('syncBanner');
+      if(!banner) {
+        banner = document.createElement('div');
+        banner.id = 'syncBanner';
+        banner.style.cssText = "background:#0f3460; border:1px solid #3498db; padding:8px; margin:10px auto; border-radius:4px; font-size:11px; color:#8f8; text-align:center; max-width:800px;";
+        document.body.insertBefore(banner, document.body.firstChild);
+      }
+      banner.innerHTML = `📡 <b>Cité connectée :</b> ${data.unlockedSpaces} cases débloquées au total | <b>${data.freeSpaces} espaces libres</b> (Mise à jour à ${data.lastUpdate})`;
+    }
+  } catch(e) {
+    console.log("Erreur lecture synchro :", e);
+  }
+}
+
+// Vérifie les données transmises par le planificateur dès l'ouverture
+window.addEventListener('DOMContentLoaded', checkGlobalCityData);
+setInterval(checkGlobalCityData, 3000);
+</script>
+</body>
+</html>
+
