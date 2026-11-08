@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> Assistant Stratégique Intégral </title>
+    <style>
+        :root {
+            --bg-app: #0d130e;
+            --card-bg: #162218;
+            --text-main: #e2ebd8;
+            --primary: #458a57;
+            --primary-hover: #57a86c;
+            --accent: #e5b15d;
+            --input-bg: #0a0e0a;
+            --border-col: #273d2b;
+            --danger: #c94a4a;
+            --muted: #9aa892;
+            --purple-accent: #9b59b6;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, sans-serif;
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            padding: 20px;
+        }
+
+        main { max-width: 1100px; margin: 0 auto; }
+
+        header {
+            background: linear-gradient(135deg, #162218, #1c2e20);
+            border: 1px solid var(--border-col);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        h1 { margin: 0; font-size: 20px; color: var(--accent); }
+        .subtitle { font-size: 13px; color: var(--muted); }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-col);
+            border-radius: 8px;
+            padding: 18px;
+            margin-bottom: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        .card.simu-mode { border: 2px dashed var(--accent) !important; }
+
+        .card-body { display: block; margin-top: 12px; }
+        .card.collapsed .card-body { display: none; }
+        .card.collapsed { padding-bottom: 18px; }
+
+        h2 {
+            font-size: 16px;
+            color: var(--accent);
+            margin: 0;
+            padding-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+        h2:hover { color: var(--primary-hover); }
+
+        h2[title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 125%;
+            left: 0;
+            background: #0a0e0a;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: normal;
+            white-space: pre-wrap;
+            max-width: 450px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+            line-height: 1.4;
+        }
+
+        .excel-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        .excel-table th, .excel-table td {
+            border: 1px solid var(--border-col);
+            padding: 8px 10px;
+            text-align: center;
+        }
+        .excel-table th { background-color: var(--input-bg); color: var(--accent); }
+
+        input, select, textarea {
+            font: inherit;
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-col);
+            background-color: var(--input-bg);
+            color: var(--text-main);
+        }
+        input { text-align: left; width: 80px; }
+        select { text-align: center; }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        button:hover { background-color: var(--primary-hover); }
+        button.secondary { background-color: #334437; color: var(--text-main); }
+        button.danger-btn { background-color: var(--danger); }
+        button.simu-btn { background-color: #4a3818; color: var(--accent); border: 1px solid var(--accent); font-weight: bold; }
+        button.simu-btn.active { background-color: var(--accent); color: #000; }
+        button.collapse-toggle { background: transparent; border: 1px solid var(--border-col); color: var(--accent); padding: 2px 8px; font-size: 11px; }
+        button.collapse-toggle:hover { background: var(--border-col); }
+
+        .action-box {
+            background: rgba(0,0,0,0.4);
+            border-left: 4px solid var(--accent);
+            padding: 12px;
+            margin-top: 15px;
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .action-box.transition-box { background: rgba(69, 138, 87, 0.15); border-left-color: #7bc59d; }
+        .action-box.alerte-box { background: rgba(201, 74, 74, 0.15); border-left-color: var(--danger); }
+        
+        .anticipation-card {
+            background: linear-gradient(135deg, #1d152b, #15202b);
+            border: 2px dashed var(--purple-accent);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        .anticipation-card.collapsed .card-body { display: none; }
+
+        .badge-prod {
+            display: inline-block;
+            background: var(--primary);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .jauge-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .tech-item {
+            background: var(--input-bg);
+            border: 1px solid var(--border-col);
+            padding: 8px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .merveilles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .merveille-card {
+            background: var(--input-bg);
+            border: 1px solid var(--border-col);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .merveille-card.possedee { border-color: var(--primary); background-color: rgba(69, 138, 87, 0.05); }
+        .merveille-card.piege { border-color: var(--danger); background-color: rgba(201, 74, 74, 0.05); }
+
+        .conseil-box {
+            background: rgba(0,0,0,0.3);
+            border-left: 3px solid var(--accent);
+            padding: 8px;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #d2dbcb;
+        }
+        .conseil-box.alerte { border-left-color: var(--danger); color: #f2cccc; background: rgba(201, 74, 74, 0.1); }
+
+        .search-container { position: relative; flex: 2; min-width: 250px; }
+        .search-suggestions {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: var(--input-bg); border: 1px solid var(--accent);
+            border-radius: 0 0 4px 4px; max-height: 220px; overflow-y: auto; z-index: 100; display: none;
+        }
+        .search-suggestions.visible { display: block; }
+        .suggestion-item {
+            padding: 8px 12px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--border-col);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .suggestion-item:hover { background-color: rgba(229, 177, 93, 0.15); color: var(--accent); }
+
+        .preview-box {
+            background: var(--input-bg); border: 2px dashed var(--accent); border-radius: 8px; padding: 14px; margin-top: 10px; display: none;
+        }
+        .preview-box.visible { display: block; }
+
+        .custom-merveille-form {
+            background: var(--input-bg);
+            border: 2px solid var(--purple-accent);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 12px;
+            display: none;
+        }
+        .custom-merveille-form.visible { display: block; }
+
+        .add-row-control {
+            margin-top: 8px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .info-bulle {
+            position: relative;
+            cursor: help;
+            border-bottom: 1px dotted var(--accent);
+        }
+        .info-bulle:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0a0e0a;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+        }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 2000; display: none;
+        }
+        .modal-overlay.visible { display: flex; }
+        .modal-content {
+            background: var(--card-bg);
+            border: 2px solid var(--accent);
+            border-radius: 10px;
+            padding: 24px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+        }
+
+        #syncBanner {
+            background: #0f3460;
+            border: 1px solid #3498db;
+            padding: 8px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #8f8;
+            text-align: center;
+            display: none;
+        }
+
+        .calc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        @media(max-width: 768px) { .calc-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<main id="app">
+    <div id="syncBanner"></div>
+</main>
+
+<!-- MODALE D'AUDIT DE TRANSITION -->
+<div id="modalAudit" class="modal-overlay">
+    <div class="modal-content">
+        <h2 style="color:var(--accent); margin-top:0;">🛡️ Audit du Coach : Test de Saut vers l'Ère Suivante</h2>
+        <p style="font-size:13px; color:var(--text-main); line-height:1.5;">
+            Vous vous apprêtez à valider la <b>Recherche Finale du Chapitre 6 (Nains)</b>. L'assistant va procéder à la vérification de vos acquis pour s'assurer que vous ne serez pas bloqué(e) au démarrage des Fées.
+        </p>
+
+        <div style="background:var(--input-bg); padding:12px; border-radius:6px; margin:15px 0; font-size:13px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label><b>🔮 Stock de Granit actuel :</b></label>
+                <input type="number" id="auditGranit" value="22000" style="width:100px; text-align:center;">
+                <span style="font-size:11px; color:var(--muted);">(Max N4 : 27 000)</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label><b>🔥 Stock de Cuivre actuel :</b></label>
+                <input type="number" id="auditCuivre" value="1000" style="width:100px; text-align:center;">
+                <span style="font-size:11px; color:var(--muted);">(Max N4 : 1 120)</span>
+            </div>
+        </div>
+
+        <div id="resultatAudit" class="action-box" style="margin-bottom:15px; display:none;"></div>
+
+        <div style="display:flex; justify-content:space-between; gap:10px;">
+            <button class="secondary" onclick="fermerModalAudit()">✖ Annuler / Revenir en arrière</button>
+            <button id="btnLancerAudit" onclick="calculerAuditTransition()">🔍 Analyser l'Aptitude de Saut</button>
+            <button id="btnForcerValidation" class="danger-btn" style="display:none;" onclick="forcerValidationTransition()">⚠️ Valider quand même (Impétueux)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const DEFAULT_MERVEILLES = [
+        { id: "aiguilles", nom: "Aiguilles de la tempête (Ch. 1)", type: "top", effet: "Unités à distance + Vitesse caserne.", conseil: "🟢 INCONTOURNABLE : Indispensable pour le combat et l'optimisation des tournois." },
+        { id: "phare", nom: "Phare de cristal / Tour des rubis (Ch. 1)", type: "top", effet: "Prolonge la durée des aides et fournit des marchandises.", conseil: "🟢 TRÈS UTILE : Confortable pour le commerce et le voisinage." },
+        { id: "abysse", nom: "Abysse doré (Ch. 2)", type: "top", effet: "Or passif + Population massive.", conseil: "🟢 INCONTOURNABLE : Résout durablement les problèmes de population sans poser de résidences." },
+        { id: "monastere", nom: "Monastère martial / Sanctuaire (Ch. 3)", type: "top", effet: "PV des unités + Culture élevée.", conseil: "🟢 INCONTOURNABLE : Le bouclier vital de vos armées et une excellente source de culture par case." },
+        { id: "sanctuaire_houblon", nom: "Sanctuaire du houblon (Ch. 4)", type: "top", effet: "Production de troupes Légères de Corps à Corps + Marchand.", conseil: "🟢 TRÈS FORT : Excellent boost pour la caserne." },
+        { id: "trone", nom: "Trône des hauts-hommes (Ch. 5)", type: "piege", effet: "Culture et points de classement.", conseil: "🔴 PIÈGE PUR : Coût exorbitant en Restaurations Royales et en PC pour un retour totalement nul." },
+        { id: "tome_mysteres", nom: "Tome des mystères (Ch. 5)", type: "top", effet: "Fournit des reliques et des Points de Connaissance quotidiens.", conseil: "🟢 TRÈS UTILE : Excellent pour sécuriser des reliques et un flux régulier de PC." },
+        { id: "abime_cristallin", nom: "Abîme cristallin (Ch. 6)", type: "top", effet: "Bonus de marchandises de base + Mana/Graines.", conseil: "🟢 TRÈS UTILE : Sécurise la production de marchandises." },
+        { id: "labyrinthe", nom: "Labyrinthe de la matière noire (Ch. 6)", type: "piege", effet: "Production de troupes et Mana.", conseil: "🔴 RAREMENT RENTABLE : Encombrant et peu efficace par rapport au coût." },
+        { id: "tour_prosp", nom: "Tour de la prospérité (Ch. 8)", type: "top", effet: "Réduit la décadence et augmente la production des sorts.", conseil: "🟢 INCONTOURNABLE : Dopage massif de l'efficacité de vos enchantements." }
+    ];
+
+    const DETAILS_RACE_SUIVANTE = {
+        6: {
+            nom: "Les Fées (Chapitre 7)",
+            portail: "Portail des Fées (4×4 cases)",
+            batiments: [
+                "🌾 Ferme de Jour : 5×4 cases (Largeur 5 × Hauteur 4) — Min 4 conseillées",
+                "🌙 Ferme de Nuit : 2×7 cases (Largeur 2 × Hauteur 7) — Min 3 conseillées",
+                "🌻 Allée de tournesols : Remplacera le réseau de rails nains"
+            ],
+            surfaceTotale: "~250 cases",
+            astuce: "Les Fermes de Jour mesurent 5×4 et les Fermes de Nuit 2×7 en longueur. Conservez des espaces adaptés."
+        }
+    };
+
+    const TRANSITIONS_CHAPITRES = {
+        6: {
+            nomSuivant: "Chapitre 7 : Les Fées",
+            surfaceMin: 250,
+            formeConseillee: "Bloc carré d'environ 15 x 17 cases",
+            contrainteRue: "Rails de mine obligatoires reliés au Portail Nain. Les Fées remplaceront cela par des rues classiques et des fermes volumineuses (5x4 et 2x7).",
+            portailReq: "Niveau 4 (Capacité 27 000 Granit / 1 120 Cuivre)",
+            regles: [
+                "Les Fermes de Jour (5x4) produisent l'Engrais et le Miel pour faire tourner les Fermes de Nuit (2x7).",
+                "Ne raserez les Mines de Granit qu'une fois la dernière technologie Naine validée."
+            ]
+        }
+    };
+
+    const RECHERCHES_PAR_CHAPITRE = {
+        6: [
+            { id: "nains_portail", nom: "1. Portail des Nains" },
+            { id: "nains_granit", nom: "2. Mines de Granit" },
+            { id: "nains_cuivre", nom: "3. Fonderies de Cuivre" },
+            { id: "nains_merveilles", nom: "4. Merveilles des Nains" },
+            { id: "fin", nom: "⭐ Recherche Finale (Bouclage Nains)" }
+        ]
+    };
+
+    let saved = JSON.parse(localStorage.getItem("elvenar_evolutif_v33")) || {};
+    let customMerveilles = saved.customMerveilles || [];
+    let merveillesRef = [...DEFAULT_MERVEILLES, ...customMerveilles];
+
+    let state = {
+        chapitre: saved.chapitre || 6,
+        portailNiv: saved.portailNiv || 3,
+        qte1: saved.qte1 !== undefined ? saved.qte1 : 2,
+        qte2: saved.qte2 !== undefined ? saved.qte2 : 3,
+        qte3: saved.qte3 !== undefined ? saved.qte3 : 3,
+        qte4: saved.qte4 !== undefined ? saved.qte4 : 0,
+        cuivre1: saved.cuivre1 !== undefined ? saved.cuivre1 : 0,
+        cuivre2: saved.cuivre2 !== undefined ? saved.cuivre2 : 0,
+        cuivre3: saved.cuivre3 !== undefined ? saved.cuivre3 : 0,
+        cuivre4: saved.cuivre4 !== undefined ? saved.cuivre4 : 0,
+        espaceLarg: saved.espaceLarg || 13,
+        espaceHaut: saved.espaceHaut || 14,
+        techsObtenues: saved.techsObtenues || {},
+        possession: saved.possession || { abysse: true, aiguilles: true, monastere: true, phare: true },
+        niveauxMerveilles: saved.niveauxMerveilles || { abysse: 1, aiguilles: 1, monastere: 1, phare: 1 },
+        customMerveilles: customMerveilles,
+        
+        stockCultureActuel: saved.stockCultureActuel !== undefined ? saved.stockCultureActuel : 2564,
+
+        calcSupprNom: saved.calcSupprNom || "Jardin d'Harmonie",
+        calcSupprQte: saved.calcSupprQte !== undefined ? saved.calcSupprQte : 1,
+        calcSupprCult: saved.calcSupprCult !== undefined ? saved.calcSupprCult : 2500,
+        calcSupprPop: saved.calcSupprPop !== undefined ? saved.calcSupprPop : 0,
+        calcSupprCases: saved.calcSupprCases !== undefined ? saved.calcSupprCases : 30,
+        
+        calcPoseNom: saved.calcPoseNom || "Promenades de l'Harmonie",
+        calcPoseQte: saved.calcPoseQte !== undefined ? saved.calcPoseQte : 5,
+        calcPoseCult: saved.calcPoseCult !== undefined ? saved.calcPoseCult : 250,
+        calcPosePop: saved.calcPosePop !== undefined ? saved.calcPosePop : 0,
+        calcPoseCases: saved.calcPoseCases !== undefined ? saved.calcPoseCases : 2,
+
+        collapsedCards: saved.collapsedCards || {},
+        isSimulating: false
+    };
+
+    let simuState = null;
+    let selectedSearchId = "";
+
+    function saveState() {
+        if(!state.isSimulating) {
+            localStorage.setItem("elvenar_evolutif_v33", JSON.stringify(state));
+        }
+    }
+
+    function toggleSimulation() {
+        state.isSimulating = !state.isSimulating;
+        simuState = state.isSimulating ? JSON.parse(JSON.stringify(state)) : null;
+        render();
+    }
+
+    function applySimulationToReal() {
+        if(confirm("✔ Souhaitez-vous appliquer ces réglages d'essai directement dans votre Cité Réelle ?")) {
+            Object.assign(state, simuState);
+            state.isSimulating = false;
+            simuState = null;
+            saveState();
+            render();
+        }
+    }
+
+    function getActiveData() {
+        return state.isSimulating ? simuState : state;
+    }
+
+    function toggleCardCollapse(cardKey) {
+        const d = getActiveData();
+        if(!d.collapsedCards) d.collapsedCards = {};
+        d.collapsedCards[cardKey] = !d.collapsedCards[cardKey];
+        saveState();
+        render();
+    }
+
+    function exporterSauvegardeFichier() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `sauvegarde_assistant_strategique_chapitre_${state.chapitre}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    function importerSauvegardeFichier(event) {
+        const fileReader = new FileReader();
+        if(event.target.files && event.target.files[0]) {
+            fileReader.readAsText(event.target.files[0], "UTF-8");
+            fileReader.onload = (e) => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if(parsed && parsed.chapitre !== undefined) {
+                        state = parsed;
+                        customMerveilles = state.customMerveilles || [];
+                        merveillesRef = [...DEFAULT_MERVEILLES, ...customMerveilles];
+                        saveState();
+                        render();
+                        alert("✔ Sauvegarde importée avec succès ! Tes Merveilles et réglages sont de retour.");
+                    } else {
+                        alert("❌ Fichier de sauvegarde invalide.");
+                    }
+                } catch(err) {
+                    alert("❌ Erreur lors de la lecture du fichier JSON.");
+                }
+            };
+        }
+    }
+
+    function render() {
+        const app = document.getElementById("app");
+        let banner = document.getElementById("syncBanner");
+        if (!banner) {
+            banner = document.createElement("div");
+            banner.id = "syncBanner";
+            app.prepend(banner);
+        }
+        let bannerHTML = banner.outerHTML;
+
+        app.innerHTML = bannerHTML;
+        app.append(
+            createHeader(),
+            createCardWrapper(
+                "campement", 
+                "⚙️ Pilotage & Production – Chapitre " + getActiveData().chapitre, 
+                "Pilote les bâtiments d'invités (Mines de Granit, Fonderies de Cuivre, etc.) selon les multiplicateurs de ton portail pour éviter les pénuries.",
+                createCampementContent
+            ),
+            createAnticipationCard(),
+            createCardWrapper(
+                "transition", 
+                "📐 Analyse Géométrique & Anticipation", 
+                "Vérifie si les dimensions de ton plateau de jeu sont suffisantes pour accueillir les structures massives de la prochaine ère.",
+                createTransitionContent
+            ),
+            createCardWrapper(
+                "calculatrice", 
+                "🧮 Simulateur de Substitution & Verdict de Viabilité", 
+                "Simule l'impact d'un remplacement de bâtiments sur ton stock de culture et ton espace au sol avant de faire des bêtises dans ta cité.",
+                createCalculatriceContent
+            ),
+            createCardWrapper(
+                "tech", 
+                "🧪 Suivi des Recherches", 
+                "Coche les technologies validées de l'ère en cours et déclenche l'audit officiel avant le saut vers le chapitre suivant.",
+                createTechContent
+            ),
+            createCardWrapper(
+                "merveilles", 
+                "🏛️ Suivi de vos Merveilles Actives, Niveaux & Conseils", 
+                "Répertorie tes Merveilles antiques, consulte les conseils d'utilité du coach, et ajoute ou configure des Merveilles oubliées ou personnalisées.",
+                createMerveillesContent
+            )
+        );
+        checkGlobalCityData();
+    }
+
+    function createCardWrapper(key, titleText, tooltipText, contentGenerator) {
+        const d = getActiveData();
+        const isCollapsed = d.collapsedCards && d.collapsedCards[key];
+
+        const card = document.createElement("div");
+        card.className = `card ${isCollapsed ? 'collapsed' : ''} ${key === 'campement' && state.isSimulating ? 'simu-mode' : ''}`;
+
+        const h2 = document.createElement("h2");
+        h2.setAttribute("title", tooltipText);
+        h2.innerHTML = `
+            <span>${titleText} ${state.isSimulating && key === 'campement' ? '(MODE ESSAI)' : ''}</span>
+            <div style="display:flex; gap:8px; align-items:center;">
+                ${state.isSimulating && key === 'campement' ? '<button onclick="applySimulationToReal()" style="background:#e5b15d; color:#000; font-size:11px;">✅ Valider</button>' : ''}
+                <button class="collapse-toggle">${isCollapsed ? '▼ Développer' : '▲ Réduire'}</button>
+            </div>
+        `;
+        
+        h2.onclick = (e) => {
+            if(e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+            toggleCardCollapse(key);
+        };
+        h2.querySelector('.collapse-toggle').onclick = (e) => {
+            e.stopPropagation();
+            toggleCardCollapse(key);
+        };
+
+        const bodyDiv = document.createElement("div");
+        bodyDiv.className = "card-body";
+        bodyDiv.append(contentGenerator());
+
+        card.append(h2, bodyDiv);
+        return card;
+    }
+
+    function createHeader() {
+        const header = document.createElement("header");
+        
+        const infoDiv = document.createElement("div");
+        infoDiv.innerHTML = `
+            <h1>🌿 Elvenar · Assistant Stratégique Intégral (Tous les Âges)</h1>
+            <div class="subtitle">Pilotage, Audit de Transition, Calculateur d'Impact & Coach</div>
+        `;
+
+        const controlsDiv = document.createElement("div");
+        controlsDiv.style.cssText = "display: flex; gap: 15px; align-items: center; flex-wrap: wrap; font-size: 13px;";
+        
+        let htmlSel = `<label title="Permet de basculer l'assistant vers l'ère sur laquelle se trouve ta cité pour adapter les calculateurs."><b>Chapitre :</b></label><select id="selChapitre">`;
+        for (let i = 6; i <= 16; i++) {
+            const nomChap = TRANSITIONS_CHAPITRES[i] ? TRANSITIONS_CHAPITRES[i].nomSuivant.replace("Chapitre " + (i+1) + " : ", "") : "Ère " + i;
+            htmlSel += `<option value="${i}" ${i === state.chapitre ? 'selected' : ''}>Ch. ${i} (${nomChap})</option>`;
+        }
+        htmlSel += `</select>`;
+
+        const saveZone = `
+            <div style="display: flex; gap: 6px; align-items: center; border-left: 1px solid var(--border-col); padding-left: 12px;">
+                <button class="secondary" title="Télécharge un fichier de sauvegarde (.json) contenant toutes tes Merveilles et configurations sur ton ordinateur." onclick="exporterSauvegardeFichier()">💾 Sauvegarder</button>
+                <label class="secondary" style="padding: 6px 12px; border-radius: 4px; background: #334437; cursor: pointer; font-weight: 600;" title="Charge un fichier de sauvegarde (.json) précédent pour récupérer instantanément toutes tes données.">
+                    📂 Charger <input type="file" id="fileImporter" style="display:none;" accept=".json" onchange="importerSauvegardeFichier(event)">
+                </label>
+            </div>
+        `;
+
+        controlsDiv.innerHTML = htmlSel + saveZone;
+        controlsDiv.querySelector("select").onchange = (e) => {
+            state.chapitre = parseInt(e.target.value);
+            saveState();
+            render();
+        };
+
+        const btnDiv = document.createElement("div");
+        btnDiv.style.cssText = "display: flex; gap: 8px;";
+        
+        const btnSimu = document.createElement("button");
+        btnSimu.className = `simu-btn ${state.isSimulating ? 'active' : ''}`;
+        btnSimu.textContent = state.isSimulating ? "🧪 Quitter le Mode Essai" : "🧪 Lancer un Essai";
+        btnSimu.onclick = toggleSimulation;
+
+        btnDiv.append(btnSimu);
+        header.append(infoDiv, controlsDiv, btnDiv);
+        return header;
+    }
+
+    function createCampementContent() {
+        const d = getActiveData();
+        const container = document.createElement("div");
+
+        if (d.chapitre === 6) {
+            const topRow = document.createElement("div");
+            topRow.style.cssText = "display: flex; gap: 15px; align-items: center; margin-bottom: 15px; flex-wrap: wrap;";
+            topRow.innerHTML = `<label><b>Niveau du Portail Nain :</b></label>`;
+            
+            const sel = document.createElement("select");
+            [1,2,3,4].forEach(n => {
+                const opt = document.createElement("option");
+                opt.value = n;
+                opt.textContent = `Niveau ${n} (+${(n-1)*10}%)`;
+                if(n === d.portailNiv) opt.selected = true;
+                sel.append(opt);
+            });
+            sel.onchange = (e) => { d.portailNiv = parseInt(e.target.value); saveState(); updateCalculs(); };
+            
+            const badge = document.createElement("span");
+            badge.id = "prodTotale";
+            badge.className = "badge-prod";
+
+            const jauge = document.createElement("span");
+            jauge.id = "jaugeStatus";
+            jauge.className = "jauge-status";
+
+            topRow.append(sel, badge, jauge);
+            container.append(topRow);
+
+            const tableGranit = document.createElement("table");
+            tableGranit.className = "excel-table";
+            tableGranit.id = "tableGranit";
+            tableGranit.innerHTML = `
+                <thead><tr><th>Mine de Granit</th><th>Niveau</th><th>Prod / h</th><th>Nombre</th><th>Sous-Total</th></tr></thead>
+                <tbody id="tbodyGranit"></tbody>
+            `;
+            container.append(tableGranit);
+
+            const hiddenGranitNivs = [];
+            [1,2,3,4].forEach(n => { if (d[`qte${n}`] === 0) hiddenGranitNivs.push(n); });
+
+            const granitCtrl = document.createElement("div");
+            granitCtrl.className = "add-row-control";
+            if (hiddenGranitNivs.length > 0) {
+                let opts = `<option value="">➕ Afficher / Poser un niveau de Mine de Granit...</option>`;
+                hiddenGranitNivs.forEach(n => opts += `<option value="${n}">Mine de Granit - Niveau ${n} (3×2 cases)</option>`);
+                granitCtrl.innerHTML = `<select onchange="addNiveauBuilding('granit', this.value)">${opts}</select>`;
+            }
+            container.append(granitCtrl);
+
+            const tableCuivre = document.createElement("table");
+            tableCuivre.className = "excel-table";
+            tableCuivre.id = "tableCuivre";
+            tableCuivre.style.marginTop = "15px";
+            tableCuivre.innerHTML = `
+                <thead><tr><th>Fonderie de Cuivre</th><th>Niveau</th><th>Prod / h</th><th>Nombre</th><th>Sous-Total</th></tr></thead>
+                <tbody id="tbodyCuivre"></tbody>
+            `;
+            container.append(tableCuivre);
+
+            const hiddenCuivreNivs = [];
+            [1,2,3,4].forEach(n => { if (d[`cuivre${n}`] === 0) hiddenCuivreNivs.push(n); });
+
+            const cuivreCtrl = document.createElement("div");
+            cuivreCtrl.className = "add-row-control";
+            if (hiddenCuivreNivs.length > 0) {
+                let opts = `<option value="">➕ Afficher / Poser un niveau de Fonderie...</option>`;
+                hiddenCuivreNivs.forEach(n => {
+                    const taille = (n >= 3) ? "3×3 cases" : "2×3 cases";
+                    opts += `<option value="${n}">Fonderie de Cuivre - Niveau ${n} (${taille})</option>`;
+                });
+                cuivreCtrl.innerHTML = `<select onchange="addNiveauBuilding('cuivre', this.value)">${opts}</select>`;
+            }
+            container.append(cuivreCtrl);
+
+            const directiveBox = document.createElement("div");
+            directiveBox.id = "directiveAction";
+            directiveBox.className = "action-box";
+            container.append(directiveBox);
+
+            setTimeout(updateCalculs, 50);
+        } else {
+            container.innerHTML += `<div class="action-box"><b>💡 Conseil du Coach (Chapitre ${d.chapitre}) :</b><br>Gestion active du campement de l'ère en cours. Pensez à anticiper la production des ressources invitées avant de valider la dernière recherche technologique.</div>`;
+        }
+
+        return container;
+    }
+
+    function addNiveauBuilding(type, level) {
+        if (!level) return;
+        const d = getActiveData();
+        const l = parseInt(level);
+        if (type === 'granit') d[`qte${l}`] = 1;
+        else if (type === 'cuivre') d[`cuivre${l}`] = 1;
+        saveState();
+        render();
+    }
+
+    function createAnticipationCard() {
+        const d = getActiveData();
+        const aDesFonderies = (d.cuivre1 + d.cuivre2 + d.cuivre3 + d.cuivre4) > 0;
+        if (!aDesFonderies) return document.createElement("div");
+
+        const infoSuivante = DETAILS_RACE_SUIVANTE[d.chapitre];
+        if (!infoSuivante) return document.createElement("div");
+
+        const isCollapsed = d.collapsedCards && d.collapsedCards['anticipation'];
+        const card = document.createElement("div");
+        card.className = `anticipation-card ${isCollapsed ? 'collapsed' : ''}`;
+        let htmlBatiments = infoSuivante.batiments.map(b => `<li>${b}</li>`).join("");
+
+        const headerDiv = document.createElement("div");
+        headerDiv.style.cssText = "display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:6px; cursor:pointer;";
+        headerDiv.title = "Anticipation des contraintes géométriques et des bâtiments de la race invitée suivante pour éviter d'être pris au dépourvu.";
+        headerDiv.innerHTML = `
+            <b style="color:var(--purple-accent); font-size:15px;">🔮 BANDEAU D'ANTICIPATION : RÈGLES DE L'ÈRE SUIVANTE (${infoSuivante.nom})</b>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <span style="font-size:11px; background:var(--purple-accent); color:#fff; padding:2px 8px; border-radius:10px;">Fonderies actives</span>
+                <button class="collapse-toggle">${isCollapsed ? '▼ Développer' : '▲ Réduire'}</button>
+            </div>
+        `;
+
+        headerDiv.onclick = () => { toggleCardCollapse('anticipation'); };
+
+        const bodyDiv = document.createElement("div");
+        bodyDiv.className = "card-body";
+        bodyDiv.innerHTML = `
+            <div style="font-size:13px; line-height:1.5; margin-top:10px;">
+                • <b>Portail Requis :</b> ${infoSuivante.portail}<br>
+                • <b>Emprise totale suggérée :</b> <span style="color:var(--accent); font-weight:bold;">${infoSuivante.surfaceTotale}</span><br>
+                • <b>Gabarits des bâtiments invités à anticiper :</b>
+                <ul style="margin:4px 0 8px 20px; padding:0;">${htmlBatiments}</ul>
+                💡 <b>Astuce du Coach :</b> ${infoSuivante.astuce}
+            </div>
+        `;
+
+        card.append(headerDiv, bodyDiv);
+        return card;
+    }
+
+    function createTransitionContent() {
+        const d = getActiveData();
+        const infoTrans = TRANSITIONS_CHAPITRES[d.chapitre] || { nomSuivant: "Ère Ultime", surfaceMin: 700 };
+        const surfaceActuelle = d.espaceLarg * d.espaceHaut;
+        const estTropPetit = surfaceActuelle < infoTrans.surfaceMin;
+
+        const container = document.createElement("div");
+        container.innerHTML = `
+            <div class="action-box ${estTropPetit ? 'alerte-box' : 'transition-box'}">
+                <b>📍 CONFIGURATION DE TON ESPACE ACTUEL :</b><br>
+                • <b>Dimensions saisies :</b> <input type="number" id="inpLarg" value="${d.espaceLarg}" min="1" oninput="syncEspace()"> Largeur × <input type="number" id="inpHaut" value="${d.espaceHaut}" min="1" oninput="syncEspace()"> Hauteur = <b>${surfaceActuelle} cases</b>.<br>
+                • <b>Exigence Campement Cible :</b> Minimum <b>${infoTrans.surfaceMin} cases</b>.<br>
+                • <b>Diagnostic de Forme :</b> ${estTropPetit ? "❌ <span style='color:var(--danger);'>ALERTE GÉOMÉTRIQUE : Espace insuffisant pour la transition.</span>" : "✔ <span style='color:var(--primary);'>La surface géométrique brute est tout à fait compatible.</span>"}
+            </div>
+        `;
+        return container;
+    }
+
+    function createCalculatriceContent() {
+        const d = getActiveData();
+        const container = document.createElement("div");
+
+        container.innerHTML = `
+            <p style="font-size:13px; color:var(--muted); margin-top:0;">
+                Renseigne ton stock de culture et les bâtiments impliqués : l'assistant te dira si l'échange est <b>Valable, Risqué ou à Ne pas faire</b>.
+            </p>
+
+            <div style="background:var(--input-bg); padding:10px 14px; border-radius:6px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; font-size:13px;">
+                <label><b>🎵 Ton Stock / Solde de Culture Actuel dans le jeu :</b></label>
+                <input type="number" id="stockCultureActuel" value="${d.stockCultureActuel}" style="width:100px; text-align:center;" oninput="syncCalcInputs()">
+            </div>
+            
+            <div class="calc-grid">
+                <!-- SUPPRESSION -->
+                <div style="background:var(--input-bg); padding:12px; border-radius:6px; border:1px solid var(--border-col);">
+                    <b style="color:var(--danger);">❌ Bâtiment(s) à SUPPRIMER :</b>
+                    <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px; font-size:13px;">
+                        <label>Nom : <input type="text" id="calcSupprNom" value="${d.calcSupprNom}" style="width:100%;" oninput="syncCalcInputs()"></label>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <label>Qté : <input type="number" id="calcSupprQte" value="${d.calcSupprQte}" min="1" style="width:50px;" oninput="syncCalcInputs()"></label>
+                            <label>Culture/unit : <input type="number" id="calcSupprCult" value="${d.calcSupprCult}" oninput="syncCalcInputs()"></label>
+                            <label>Cases/unit : <input type="number" id="calcSupprCases" value="${d.calcSupprCases}" oninput="syncCalcInputs()"></label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AJOUT -->
+                <div style="background:var(--input-bg); padding:12px; border-radius:6px; border:1px solid var(--border-col);">
+                    <b style="color:var(--primary);">➕ Bâtiment(s) à POSER :</b>
+                    <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px; font-size:13px;">
+                        <label>Nom : <input type="text" id="calcPoseNom" value="${d.calcPoseNom}" style="width:100%;" oninput="syncCalcInputs()"></label>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <label>Qté : <input type="number" id="calcPoseQte" value="${d.calcPoseQte}" min="1" style="width:50px;" oninput="syncCalcInputs()"></label>
+                            <label>Culture/unit : <input type="number" id="calcPoseCult" value="${d.calcPoseCult}" oninput="syncCalcInputs()"></label>
+                            <label>Cases/unit : <input type="number" id="calcPoseCases" value="${d.calcPoseCases}" oninput="syncCalcInputs()"></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="calcResultat" class="action-box" style="margin-top:15px;"></div>
+        `;
+
+        setTimeout(calculerBilanSubst, 50);
+        return container;
+    }
+
+    function syncCalcInputs() {
+        const d = getActiveData();
+        d.stockCultureActuel = parseInt(document.getElementById('stockCultureActuel').value) || 0;
+
+        d.calcSupprNom = document.getElementById('calcSupprNom').value;
+        d.calcSupprQte = parseInt(document.getElementById('calcSupprQte').value) || 1;
+        d.calcSupprCult = parseInt(document.getElementById('calcSupprCult').value) || 0;
+        d.calcSupprCases = parseInt(document.getElementById('calcSupprCases').value) || 0;
+
+        d.calcPoseNom = document.getElementById('calcPoseNom').value;
+        d.calcPoseQte = parseInt(document.getElementById('calcPoseQte').value) || 1;
+        d.calcPoseCult = parseInt(document.getElementById('calcPoseCult').value) || 0;
+        d.calcPoseCases = parseInt(document.getElementById('calcPoseCases').value) || 0;
+
+        saveState();
+        calculerBilanSubst();
+    }
+
+    function calculerBilanSubst() {
+        const d = getActiveData();
+        const resBox = document.getElementById('calcResultat');
+        if(!resBox) return;
+
+        const totalSupprCulture = d.calcSupprQte * d.calcSupprCult;
+        const totalSupprCases = d.calcSupprQte * d.calcSupprCases;
+
+        const totalPoseCulture = d.calcPoseQte * d.calcPoseCult;
+        const totalPoseCases = d.calcPoseQte * d.calcPoseCases;
+
+        const deltaCulture = totalPoseCulture - totalSupprCulture;
+        const nouveauStockCulture = d.stockCultureActuel + deltaCulture;
+        const deltaCases = totalPoseCases - totalSupprCases;
+
+        let html = `<b>📊 BILAN NET DE L'ÉCHANGE (QUANTITÉS APPLIQUÉES) :</b><br>`;
+        html += `• <b>Total Supprimé :</b> -${totalSupprCulture} pts culture | -${totalSupprCases} cases<br>`;
+        html += `• <b>Total Posé :</b> +${totalPoseCulture} pts culture | +${totalPoseCases} cases<br>`;
+        html += `• <b>Delta Culture Net :</b> <span style="color:${deltaCulture >= 0 ? 'var(--primary)' : 'var(--danger)'};">${deltaCulture >= 0 ? '+' + deltaCulture : deltaCulture} pts</span><br>`;
+        html += `• <b>Nouveau Stock Global estimé :</b> <b style="color:${nouveauStockCulture >= 0 ? 'var(--accent)' : 'var(--danger)'};">${nouveauStockCulture} pts</b><br>`;
+        html += `• <b>Bilan Emprise au sol :</b> <span style="color:${deltaCases <= 0 ? 'var(--primary)' : 'var(--accent)'};">${deltaCases <= 0 ? Math.abs(deltaCases) + ' cases libérées 🎉' : '+' + deltaCases + ' cases consommées ⚠️'}</span><br><br>`;
+
+        html += `<b>🎯 VERDICT DU COACH :</b><br>`;
+
+        if (nouveauStockCulture < 0) {
+            resBox.className = "action-box alerte-box";
+            html += `🔴 <span style="color:var(--danger); font-weight:bold;">NE PAS FAIRE :</b> Ton stock global passerait dans le négatif (${nouveauStockCulture}). Tes manufactures vont perdre leur bonus de production. Cet échange est à proscrire !`;
+        } else if (nouveauStockCulture < 500) {
+            resBox.className = "action-box alerte-box";
+            html += `🟠 <span style="color:var(--accent); font-weight:bold;">RISQUÉ :</b> Ton stock de culture résiduel sera trop faible (${nouveauStockCulture} pts). La moindre variation te mettra en crise culturelle.`;
+        } else {
+            resBox.className = "action-box transition-box";
+            html += `🟢 <span style="color:#7bc59d; font-weight:bold;">VALABLE ET RENTABLE :</b> Ton stock global restera sécurisé à ${nouveauStockCulture} points, tout en optimisant ton espace au sol. Tu peux y aller les yeux fermés !`;
+        }
+
+        resBox.innerHTML = html;
+    }
+
+    function createTechContent() {
+        const d = getActiveData();
+        const container = document.createElement("div");
+        const grid = document.createElement("div");
+        grid.className = "tech-grid";
+
+        const techs = RECHERCHES_PAR_CHAPITRE[d.chapitre] || [
+            { id: "base", nom: "Technologies Générales de l'Ère" },
+            { id: "fin", nom: "⭐ Recherche Finale (Bouclage Nains)" }
+        ];
+
+        techs.forEach(t => {
+            const fullId = `chap_${d.chapitre}_${t.id}`;
+            const isChecked = !!d.techsObtenues[fullId];
+            const label = document.createElement("label");
+            label.className = "tech-item";
+            if(isChecked) label.style.opacity = "0.5";
+
+            const chk = document.createElement("input");
+            chk.type = "checkbox"; 
+            chk.checked = isChecked;
+            
+            chk.onchange = (e) => { 
+                if (t.id === "fin" && e.target.checked) {
+                    e.target.checked = false; 
+                    ouvrirModalAudit();
+                } else {
+                    d.techsObtenues[fullId] = e.target.checked; 
+                    saveState(); 
+                    render(); 
+                }
+            };
+
+            label.append(chk, document.createTextNode(t.nom));
+            grid.append(label);
+        });
+
+        container.append(grid);
+        return container;
+    }
+
+    function createMerveillesContent() {
+        const d = getActiveData();
+        merveillesRef = [...DEFAULT_MERVEILLES, ...(d.customMerveilles || [])];
+
+        const container = document.createElement("div");
+
+        const topActions = document.createElement("div");
+        topActions.style.cssText = "display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; font-size: 13px;";
+        
+        const searchContainer = document.createElement("div");
+        searchContainer.className = "search-container";
+
+        const searchInput = document.createElement("input");
+        searchInput.type = "text";
+        searchInput.id = "merveilleSearchInput";
+        searchInput.placeholder = "🔍 Chercher une Merveille (ex: Aiguilles, Phare...)";
+        searchInput.style.width = "100%";
+
+        const suggestionsBox = document.createElement("div");
+        suggestionsBox.className = "search-suggestions";
+        suggestionsBox.id = "merveilleSuggestions";
+
+        searchInput.oninput = (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            suggestionsBox.innerHTML = "";
+            selectedSearchId = "";
+
+            if(query.length === 0) {
+                suggestionsBox.classList.remove("visible");
+                return;
+            }
+
+            const matches = merveillesRef.filter(m => !d.possession[m.id] && m.nom.toLowerCase().includes(query));
+
+            if(matches.length === 0) {
+                const div = document.createElement("div");
+                div.className = "suggestion-item";
+                div.style.color = "var(--muted)";
+                div.textContent = "Aucune Merveille trouvée...";
+                suggestionsBox.append(div);
+            } else {
+                matches.forEach(m => {
+                    const div = document.createElement("div");
+                    div.className = "suggestion-item";
+                    
+                    const spanName = document.createElement("span");
+                    spanName.textContent = m.nom + (m.type === 'piege' ? ' (⚠️ Piège)' : '');
+
+                    const btnInfo = document.createElement("button");
+                    btnInfo.className = "secondary";
+                    btnInfo.style.cssText = "padding: 2px 6px; font-size: 11px;";
+                    btnInfo.textContent = "👁️ Voir la Fiche";
+                    btnInfo.onclick = (event) => {
+                        event.stopPropagation();
+                        showPreviewMerveille(m);
+                    };
+
+                    div.append(spanName, btnInfo);
+
+                    div.onclick = () => {
+                        searchInput.value = m.nom;
+                        selectedSearchId = m.id;
+                        showPreviewMerveille(m);
+                        suggestionsBox.classList.remove("visible");
+                    };
+                    suggestionsBox.append(div);
+                });
+            }
+            suggestionsBox.classList.add("visible");
+        };
+
+        searchContainer.append(searchInput, suggestionsBox);
+
+        const btnAdd = document.createElement("button");
+        btnAdd.textContent = "➕ Installer";
+        btnAdd.title = "Installe la merveille sélectionnée dans la recherche ci-contre dans votre suivi actif.";
+        btnAdd.onclick = () => {
+            if(selectedSearchId) {
+                d.possession[selectedSearchId] = true;
+                if(!d.niveauxMerveilles[selectedSearchId]) d.niveauxMerveilles[selectedSearchId] = 1;
+                selectedSearchId = "";
+                hidePreviewMerveille();
+                saveState(); render();
+            } else {
+                alert("❌ Veuillez d'abord sélectionner une Merveille dans la liste déroulante.");
+            }
+        };
+
+        const btnToggleForm = document.createElement("button");
+        btnToggleForm.className = "secondary";
+        btnToggleForm.title = "Permet d'ajouter manuellement une merveille oubliée ou non répertoriée par Inno/wiki (nom, effet, diagnostic).";
+        btnToggleForm.textContent = "✨ Ajouter une Merveille Oubliée / Perso";
+        btnToggleForm.onclick = () => {
+            const formBox = document.getElementById("customMerveilleFormBox");
+            if(formBox) formBox.classList.toggle("visible");
+        };
+
+        topActions.append(searchContainer, btnAdd, btnToggleForm);
+        container.append(topActions);
+
+        const previewBox = document.createElement("div");
+        previewBox.id = "previewBox";
+        previewBox.className = "preview-box";
+        container.append(previewBox);
+
+        const customFormBox = document.createElement("div");
+        customFormBox.id = "customMerveilleFormBox";
+        customFormBox.className = "custom-merveille-form";
+        customFormBox.innerHTML = `
+            <b style="color:var(--purple-accent); font-size:14px;">📝 Fiche de Saisie d'une Merveille Personnalisée ou Oubliée</b>
+            <p style="font-size:12px; color:var(--muted); margin: 6px 0 12px 0;">
+                Renseigne les informations ci-dessous pour enregistrer définitivement ta merveille dans l'outil et éviter les oublis dus aux wikis non mis à jour par Inno :
+            </p>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:13px; margin-bottom:10px;">
+                <label>Nom de la Merveille & Chapitre :<br><input type="text" id="customNom" placeholder="ex: Monolithe antique (Ch. 17)" style="width:100%; margin-top:4px;"></label>
+                <label>Type / Évaluation :<br>
+                    <select id="customType" style="width:100%; margin-top:4px;">
+                        <option value="top">🟢 Utile / Rentable</option>
+                        <option value="piege">🔴 Piège / Non rentable</option>
+                    </select>
+                </label>
+            </div>
+            <div style="font-size:13px; margin-bottom:10px;">
+                <label>Effet Principal :<br><input type="text" id="customEffet" placeholder="ex: Production de Mana + Boost d'unités légères" style="width:100%; margin-top:4px;"></label>
+            </div>
+            <div style="font-size:13px; margin-bottom:15px;">
+                <label>Conseil / Diagnostic du Coach :<br><input type="text" id="customConseil" placeholder="ex: 🟢 EXCELLENT : Sécurise un flux stable de Mana." style="width:100%; margin-top:4px;"></label>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="secondary" onclick="document.getElementById('customMerveilleFormBox').classList.remove('visible')">✖ Annuler</button>
+                <button onclick="enregistrerMerveillePersonnalisee()">💾 Enregistrer et Activer</button>
+            </div>
+        `;
+        container.append(customFormBox);
+
+        const grid = document.createElement("div");
+        grid.className = "merveilles-grid";
+
+        merveillesRef.filter(m => d.possession[m.id]).forEach(m => {
+            const box = document.createElement("div");
+            box.className = `merveille-card possedee ${m.type === 'piege' ? 'piege' : ''}`;
+            
+            const nivActuel = d.niveauxMerveilles[m.id] || 1;
+
+            box.innerHTML = `
+                <div class="merveille-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <b>${m.nom}</b>
+                    <button class="secondary" style="padding:2px 6px; font-size:10px;" onclick="retirerMerveille('${m.id}')">🗑️ Retirer</button>
+                </div>
+                <div style="font-size: 12px; display: flex; align-items: center; gap: 8px;">
+                    <label><b>Niveau :</b></label>
+                    <input type="number" value="${nivActuel}" min="1" max="35" style="width: 50px; text-align: center;" onchange="updateNiveauMerveille('${m.id}', this.value)">
+                </div>
+                <div class="conseil-box ${m.type === 'piege' ? 'alerte' : ''}"><b>Effet :</b> ${m.effet}<br><b>Diagnostic :</b> ${m.conseil}</div>
+            `;
+            grid.append(box);
+        });
+
+        container.append(grid);
+        return container;
+    }
+
+    function enregistrerMerveillePersonnalisee() {
+        const d = getActiveData();
+        const nom = document.getElementById("customNom").value.trim();
+        const type = document.getElementById("customType").value;
+        const effet = document.getElementById("customEffet").value.trim();
+        const conseil = document.getElementById("customConseil").value.trim();
+
+        if(!nom) {
+            alert("❌ Veuillez renseigner au moins le nom de la Merveille.");
+            return;
+        }
+
+        const idM = "custom_" + Date.now();
+        const nouvelle = {
+            id: idM,
+            nom: nom,
+            type: type,
+            effet: effet || "Effet personnalisé",
+            conseil: conseil || (type === 'piege' ? "🔴 PIÈGE : Enregistré par vos soins." : "🟢 UTILE : Enregistré par vos soins.")
+        };
+
+        if(!d.customMerveilles) d.customMerveilles = [];
+        d.customMerveilles.push(nouvelle);
+        d.possession[idM] = true;
+        d.niveauxMerveilles[idM] = 1;
+
+        saveState();
+        render();
+    }
+
+    function showPreviewMerveille(m) {
+        const box = document.getElementById("previewBox");
+        if(!box) return;
+        selectedSearchId = m.id;
+
+        const isPiege = m.type === 'piege';
+        box.className = "preview-box visible";
+        box.style.borderColor = isPiege ? "var(--danger)" : "var(--accent)";
+        
+        box.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <b style="color: ${isPiege ? 'var(--danger)' : 'var(--accent)'}; font-size: 14px;">🔍 CONSULTATION PREALABLE : ${m.nom}</b>
+                <button class="secondary" style="padding: 2px 8px; font-size: 11px;" onclick="hidePreviewMerveille()">✖ Masquer</button>
+            </div>
+            <div style="font-size: 13px; line-height: 1.5;">
+                <b>Effet :</b> ${m.effet}<br><br>
+                <div class="conseil-box ${isPiege ? 'alerte' : ''}">
+                    <b>💡 Diagnostic du Coach :</b><br>${m.conseil}
+                </div>
+            </div>
+        `;
+    }
+
+    function hidePreviewMerveille() {
+        const box = document.getElementById("previewBox");
+        if(box) {
+            box.classList.remove("visible");
+            box.innerHTML = "";
+        }
+    }
+
+    function updateNiveauMerveille(id, val) {
+        const d = getActiveData();
+        if(!d.niveauxMerveilles) d.niveauxMerveilles = {};
+        d.niveauxMerveilles[id] = parseInt(val) || 1;
+        saveState();
+    }
+
+    function retirerMerveille(id) {
+        const d = getActiveData();
+        if(confirm("Souhaitez-vous retirer cette Merveille de votre suivi ?")) {
+            d.possession[id] = false;
+            saveState();
+            render();
+        }
+    }
+
+    function ouvrirModalAudit() {
+        const modal = document.getElementById("modalAudit");
+        const resDiv = document.getElementById("resultatAudit");
+        const btnForcer = document.getElementById("btnForcerValidation");
+        if(resDiv) resDiv.style.display = "none";
+        if(btnForcer) btnForcer.style.display = "none";
+        if(modal) modal.classList.add("visible");
+    }
+
+    function fermerModalAudit() {
+        const modal = document.getElementById("modalAudit");
+        if(modal) modal.classList.remove("visible");
+        render();
+    }
+
+    function calculerAuditTransition() {
+        const d = getActiveData();
+        const resDiv = document.getElementById("resultatAudit");
+        const btnForcer = document.getElementById("btnForcerValidation");
+        
+        const granitSaisi = parseInt(document.getElementById("auditGranit").value) || 0;
+        const cuivreSaisi = parseInt(document.getElementById("auditCuivre").value) || 0;
+        const surfaceActuelle = d.espaceLarg * d.espaceHaut;
+
+        let erreures = [];
+        let conseils = [];
+
+        if (d.portailNiv < 4) {
+            erreures.push(`❌ <b>Portail Nain sous-dimensionné (Niveau ${d.portailNiv}/4) :</b> Il est impératif de le monter au Niveau 4.`);
+        } else {
+            conseils.push("✔ Portail Nain au Niveau 4 (Capacité maximale débloquée).");
+        }
+
+        if (granitSaisi < 20000) {
+            erreures.push(`⚠️ <b>Stock de Granit un peu juste (${granitSaisi} / 27 000) :</b> Risque de pénurie au démarrage des Fées.`);
+        } else {
+            conseils.push(`✔ Stock de Granit suffisant (${granitSaisi}).`);
+        }
+
+        if (cuivreSaisi < 900) {
+            erreures.push(`⚠️ <b>Stock de Cuivre faible (${cuivreSaisi} / 1 120) :</b> Coffre trop juste pour financer l'ère suivante.`);
+        } else {
+            conseils.push(`✔ Stock de Cuivre confortable (${cuivreSaisi}).`);
+        }
+
+        if (surfaceActuelle < 250) {
+            erreures.push(`❌ <b>Surface géométrique insuffisante (${surfaceActuelle} / 250 cases) :</b> Espace trop réduit pour les Fermes de Fées.`);
+        } else {
+            conseils.push(`✔ Espace au sol suffisant (${surfaceActuelle} cases).`);
+        }
+
+        resDiv.style.display = "block";
+
+        if (erreures.length === 0) {
+            resDiv.className = "action-box transition-box";
+            resDiv.innerHTML = `
+                <b style="color:#7bc59d; font-size:14px;">🟢 FEU VERT TOTAL DU COACH !</b><br>
+                Toutes les conditions sont réunies pour sauter vers le Chapitre 7 sereinement.<br><br>
+                ${conseils.map(c => '• ' + c).join('<br>')}<br><br>
+                <b>Validation en cours...</b>
+            `;
+            btnForcer.style.display = "none";
+            setTimeout(() => { forcerValidationTransition(); }, 1500);
+        } else {
+            resDiv.className = "action-box alerte-box";
+            resDiv.innerHTML = `
+                <b style="color:var(--danger); font-size:14px;">🔴 ATTENTION : SAUT RISQUÉ</b><br>
+                L'assistant décèle des points de blocage :<br><br>
+                ${erreures.map(e => '• ' + e).join('<br>')}<br><br>
+                ${conseils.map(c => '• ' + c).join('<br>')}
+            `;
+            btnForcer.style.display = "inline-block";
+        }
+    }
+
+    function forcerValidationTransition() {
+        const d = getActiveData();
+        d.techsObtenues["fin"] = true;
+        saveState();
+        fermerModalAudit();
+        render();
+    }
+
+    function syncInputs() {
+        const d = getActiveData();
+        let changed = false;
+
+        [1,2,3,4].forEach(n => {
+            const el = document.getElementById(`inpQ${n}`);
+            if (el) {
+                const val = parseInt(el.value) || 0;
+                if (d[`qte${n}`] !== val) { d[`qte${n}`] = val; changed = true; }
+            }
+            const elC = document.getElementById(`inpCuivre${n}`);
+            if (elC) {
+                const val = parseInt(elC.value) || 0;
+                if (d[`cuivre${n}`] !== val) { d[`cuivre${n}`] = val; changed = true; }
+            }
+        });
+
+        saveState();
+        if (changed) render(); else updateCalculs();
+    }
+
+    function syncEspace() {
+        const d = getActiveData();
+        d.espaceLarg = parseInt(document.getElementById('inpLarg').value) || 10;
+        d.espaceHaut = parseInt(document.getElementById('inpHaut').value) || 10;
+        saveState();
+        render();
+    }
+
+    function updateCalculs() {
+        const d = getActiveData();
+        if (d.chapitre !== 6) return;
+
+        const baseGranit = { 1: 20, 2: 30, 3: 42, 4: 56 };
+        const baseCuivre = { 1: 10, 2: 16, 3: 24, 4: 35 };
+        const mult = { 1: 1.0, 2: 1.10, 3: 1.20, 4: 1.30 }[d.portailNiv];
+
+        let totGranit = 0;
+        let totCuivre = 0;
+
+        const tbodyG = document.getElementById("tbodyGranit");
+        if (tbodyG) {
+            tbodyG.innerHTML = "";
+            [1,2,3,4].forEach(n => {
+                const qte = d[`qte${n}`] || 0;
+                const prodH = Math.round(qte * baseGranit[n] * mult);
+                totGranit += prodH;
+
+                if (qte > 0) {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td><span class="info-bulle" data-tooltip="Emprise au sol : 3×2 cases">Mine de Granit</span></td>
+                        <td>Niveau ${n}</td>
+                        <td>${baseGranit[n]} / h</td>
+                        <td><input type="number" id="inpQ${n}" value="${qte}" min="0" onchange="syncInputs()"></td>
+                        <td>${prodH} / h</td>
+                    `;
+                    tbodyG.append(tr);
+                }
+            });
+            if (tbodyG.children.length === 0) {
+                tbodyG.innerHTML = `<tr><td colspan="5" style="color:var(--muted); font-style:italic;">Aucune mine de granit active.</td></tr>`;
+            }
+        }
+
+        const tbodyC = document.getElementById("tbodyCuivre");
+        if (tbodyC) {
+            tbodyC.innerHTML = "";
+            [1,2,3,4].forEach(n => {
+                const qte = d[`cuivre${n}`] || 0;
+                const prodH = Math.round(qte * baseCuivre[n] * mult);
+                totCuivre += prodH;
+
+                if (qte > 0) {
+                    const tr = document.createElement("tr");
+                    const tailleCuivre = (n >= 3) ? "3×3 cases" : "2×3 cases";
+                    tr.innerHTML = `
+                        <td><span class="info-bulle" data-tooltip="Emprise au sol : ${tailleCuivre}">Fonderie de Cuivre</span></td>
+                        <td>Niveau ${n}</td>
+                        <td>${baseCuivre[n]} / h</td>
+                        <td><input type="number" id="inpCuivre${n}" value="${qte}" min="0" onchange="syncInputs()"></td>
+                        <td>${prodH} / h</td>
+                    `;
+                    tbodyC.append(tr);
+                }
+            });
+            if (tbodyC.children.length === 0) {
+                tbodyC.innerHTML = `<tr><td colspan="5" style="color:var(--muted); font-style:italic;">Aucune fonderie de cuivre active.</td></tr>`;
+            }
+        }
+
+        if(document.getElementById('prodTotale')) {
+            document.getElementById('prodTotale').textContent = `${totGranit} Granit/h | ${totCuivre} Cuivre/h`;
+        }
+
+        const directiveEl = document.getElementById('directiveAction');
+        if(directiveEl) {
+            const cardParent = directiveEl.closest('.card');
+            const jauge = document.getElementById("jaugeStatus");
+            let htmlConseil = "<b>💡 Diagnostic Personnalisé du Coach :</b><br>";
+            const totalMinesGranit = d.qte1 + d.qte2 + d.qte3 + d.qte4;
+            const totalFonderiesCuivre = d.cuivre1 + d.cuivre2 + d.cuivre3 + d.cuivre4;
+            const consoGranitEstimee = totalFonderiesCuivre * 45;
+
+            if(cardParent) cardParent.classList.remove("status-vert", "status-orange", "status-rouge");
+
+            if (d.portailNiv < 4) {
+                htmlConseil += `<span style="color: var(--accent);">👉 OBJECTIF PORTAIL :</span> Portail à N${d.portailNiv}. Visant le <b>Niveau 4</b> pour la fin d'ère.<br>`;
+            }
+
+            if (totalMinesGranit === 0) {
+                if(cardParent) cardParent.classList.add("status-rouge");
+                jauge.textContent = "🔴 DANGER : Aucune Mine de Granit";
+                jauge.style.cssText = "background: #c94a4a; color: #fff;";
+                htmlConseil += "Aucune production de Granit active.";
+            } 
+            else if (totalFonderiesCuivre > 0 && totGranit < consoGranitEstimee) {
+                if(cardParent) cardParent.classList.add("status-rouge");
+                jauge.textContent = "🔴 CRITIQUE : Déficit en Granit";
+                jauge.style.cssText = "background: #c94a4a; color: #fff;";
+                htmlConseil += "Vos fonderies consomment plus que vos mines ne produisent.";
+            } 
+            else if (totalFonderiesCuivre === 0 && totalMinesGranit >= 6) {
+                if(cardParent) cardParent.classList.add("status-orange");
+                jauge.textContent = "🟠 ATTENTION : Trop de Granit / Zero Cuivre";
+                jauge.style.cssText = "background: #e5b15d; color: #000;";
+                htmlConseil += "Pensez à basculer sur un équilibre de 4 Mines / 4 Fonderies.";
+            }
+            else {
+                if(cardParent) cardParent.classList.add("status-vert");
+                jauge.textContent = "🟢 PARFAIT : Équilibre Validé";
+                jauge.style.cssText = "background: #458a57; color: #fff;";
+                htmlConseil += "Votre production tourne dans de superbes conditions.";
+            }
+            directiveEl.innerHTML = htmlConseil;
+        }
+    }
+
+    function checkGlobalCityData() {
+      try {
+        const rawData = localStorage.getItem('elvenar_shared_dashboard');
+        const banner = document.getElementById('syncBanner');
+        if(rawData && banner) {
+          const data = JSON.parse(rawData);
+          banner.style.display = 'block';
+          banner.innerHTML = `📡 <b>Cité connectée :</b> ${data.unlockedSpaces} cases débloquées | <b>${data.freeSpaces} espaces libres</b>`;
+        } else if(banner) {
+          banner.style.display = 'none';
+        }
+      } catch(e) {}
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        render();
+        setInterval(checkGlobalCityData, 3000);
+    });
+</script>
+</body>
+</html>
