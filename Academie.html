@@ -1,0 +1,115 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title> Académie </title>
+<style>
+:root{--bg:#f6f1e9;--c:#fff;--t:#2b2118;--a:#7a4b1e;--p:#fde4cf;--m:#8a7a6a}
+@media(prefers-color-scheme:dark){:root{--bg:#1d1812;--c:#2a231b;--t:#f1e8da;--a:#e0a860;--m:#b5a692}}
+body{margin:0;font:var(--fs,15px)/var(--lh,1.45) var(--ff,Arial,sans-serif);letter-spacing:var(--ls,0);background:var(--bg);color:var(--t)}main{max-width:980px;margin:auto;padding:12px}
+h1{font-size:21px;margin:6px 0}h2{font-size:16px;margin:0 0 8px;color:var(--a)}.card{background:var(--c);border-radius:10px;padding:12px;margin:10px 0;box-shadow:0 1px 3px #0003}
+input,select{font:inherit;padding:6px 8px;border-radius:6px;border:1px solid #0004;margin:2px;background:var(--p);color:#1d1d1f}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.m{color:var(--m)}.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:6px}
+.ok{color:#2e7d32;font-weight:700}.no{color:#c62828;font-weight:700}.pill{display:inline-block;padding:1px 8px;border-radius:10px;background:#0002;font-size:12px}
+table{border-collapse:collapse}td,th{border:1px solid #0003;padding:4px 10px;text-align:center}tr.sel{background:#7a4b1e33;font-weight:700}.bar{height:12px;background:#0002;border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:#2e7d32}
+.hc{--bg:#000;--c:#111;--t:#fff;--a:#ffd24a;--m:#e0e0e0;--p:#fff}.hc input,.hc select,.hc textarea{border:2px solid #fff}
+</style></head><body><main id="app"></main><script>
+const $=id=>document.getElementById(id);
+const el=(t,a,...c)=>{const e=document.createElement(t);for(const k in a||{})k==="cls"?e.className=a[k]:e.setAttribute(k,a[k]);c.flat().forEach(x=>x!=null&&e.append(x));return e};
+const ACC0={fs:15,ls:0,lh:1.45,ff:"Arial,sans-serif",hc:false};
+function applyAcc(a){const r=document.documentElement;r.style.setProperty("--fs",a.fs+"px");r.style.setProperty("--ls",a.ls+"px");r.style.setProperty("--lh",a.lh);r.style.setProperty("--ff",a.ff);r.classList.toggle("hc",!!a.hc)}
+function speak(){const s=window.speechSynthesis;if(!s)return alert("La lecture à voix haute n’est pas disponible dans ce navigateur.");if(s.speaking){s.cancel();return}const u=new SpeechSynthesisUtterance(document.getElementById("app").innerText);u.lang="fr-FR";s.speak(u)}
+const GROUPS=[["Set échiquier (4 pièces)",["Tour solaire","Cavalier de feu","Fou du tome","Roi doré"]],["Les 3 phénix",["Phénix de feu","Phénix des tempêtes","Phénix doré"]],["Les 3 ours",["Ours brun","Ours polaire","Panda"]],["Bâtiments évolutifs",["Stonehenge","Paradis des sirènes","Manoir en pain d’épices","Char de la Saint-Valentin","Arbre festif de mai","Phénix de feu glacial"]]];
+const LV=[[1,8],[2,6.5],[3,5],[4,3.5],[5,2]];
+const LC=[["4 h",8000,800,0,"/",1],["5 h",10000,1000,0,"25 %",2],["10 s",0,0,250,"50 %",3],["10 s",0,0,500,"75 %",4],["10 s",0,0,750,"100 %",5]];
+const CH=[["Jardin lumineux",5,3,12,["culture","population"],[[18600,18600],[15700,15700],[12900,12900],[10600,10600],[9000,9000],[7800,7800],[6500,6500],[5400,5400],[4400,4400]]],
+["Char floral",3,3,12,["culture"],[[32000],[27000],[22000],[18200],[15400],[13300],[11100],[9200],[7600]]],
+["Char elfe",3,5,12,["culture","population"],[[21000,16000],[17900,13400],[14800,11100],[12200,9100],[10300,7700],[8900,6700],[7400,5500],[6200,4600],[5100,3800]]],
+["Sirène dans un coquillage",3,3,12,["culture","population"],[[15900,7900],[13000,6700],[11000,5500],[9000,4500],[7600,3800],[6600,3300],[5500,2700],[4600,2300],[3800,1890]]],
+["Plus petite pièce",1,1,12,["culture"],[[3700],[3100],[2600],[2100],[1800],[1550],[1290],[1080],[890]]],
+["Caverne aux noix florissante",2,3,12,["culture","(2e valeur, titre manquant)"],[[6600,12700],[5500,10200],[4600,8100],[3800,6500],[3200,5300],[2700,5200],[2300,5000],[1900,4400],[1570,3300]]],
+["Ballon du dragon",3,3,24,["culture"],[[33000],[27000],[23000],[18600],[15700],[13600],[11300],[9400],[7800]]],
+["Observatoire",2,2,24,["culture"],[[14200],[12000],[6900],[5900],[4900],[4100],[3400],[2800],[2300]]],
+["Matriarche dragon",3,4,24,["culture","population"],[[17900,13400],[15000,11300],[12400,9300],[10200,7600],[8600,6500],[7400,5600],[6200,4700],[5200,3900],[4300,3200]]],
+["Falaise des palourdes",2,4,24,["culture","(2e valeur, titre manquant)"],[[8500,2700],[7100,2400],[5900,2100],[4800,1770],[4100,1690],[3500,1640],[2900,1590],[2400,1520],[2000,1360]]]];
+const fm=x=>x.toLocaleString("fr-FR");
+const LINK=[["Oracle du destin","Donne des « sensibles » pour chaque recette créée. Bien développé, il permet d’enlever toutes vos manufactures de sensibles."],["Arche draconique","Donne des catalyseurs pour chaque coffre mystique ouvert. Bien développée, plus besoin de poser des sets de bibliothèque."],["Maître Panda roux","Donne des « visions vaporeuses » pour chaque recette créée, et amplifie les effets de l’oracle et de l’arche."]];
+const TIPS=["Montez d’abord l’Académie au niveau 5.","Créez tous les bâtiments uniques dont vous n’avez pas besoin et laissez-les en inventaire : limités à 1 exemplaire, ils ne réapparaissent plus dans les recettes, et vous voyez plus souvent les recettes intéressantes.","Le but principal : faire des recettes pour remplir au plus vite le coffre mystique.","Les boosts de temps sont primordiaux pour faire plusieurs recettes à chaque refresh, toutes les 6 h.","Vous pouvez décaler la plage horaire avec un refresh à 50 diamants ou une gorgée de clarté, pour récolter sur les 4 plages de la journée.","Avant le refresh, ne laissez pas une recette en cours : terminez-la, sinon 4 recettes apparaissent au lieu de 5.","Pour ouvrir le coffre vite, il faut beaucoup de catalyseurs : 5 à 6 sets de bibliothèque (1 catalyseur par jour chacun, gagnables dans le Donjon : plus d’étages, plus de chances)."];
+function prof(){const m=/[#&]p=([^&]+)/.exec(location.hash);if(m)try{return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1])))))}catch(e){}
+ try{const d=JSON.parse(localStorage.getItem("elvDash"));if(d.p[d.cur])return{profil:d.cur,...d.p[d.cur]}}catch(e){}return null}
+const PR=prof();function toolbar(){const A=window.__A;const sv=()=>{applyAcc(A);try{localStorage.setItem("elvAcc",JSON.stringify(A))}catch(e){}};const mk=(t,f,title)=>{const b=el("button",{cls:"s",title},t);b.onclick=f;return b};
+ return el("div",{cls:"card row"},mk("⬅ Tableau de bord",()=>{location.href=DASH}),mk("A−",()=>{A.fs=Math.max(12,A.fs-2);sv()},"Texte plus petit"),mk("A+",()=>{A.fs=Math.min(30,A.fs+2);sv()},"Texte plus grand"),mk("🔊 Lire cette page",speak,"Lire à voix haute (cliquer de nouveau pour arrêter)"),mk("◐ Contraste",()=>{A.hc=!A.hc;sv()},"Contraste élevé"))}
+const DASH="Elvenar_Dashboard_Joueur_v0.9.html";
+window.__A={...ACC0,...(()=>{try{return(PR&&PR.acc)||JSON.parse(localStorage.getItem("elvAcc"))||{}}catch(e){return{}}})()};applyAcc(window.__A);
+let S={lvl:1,race:PR&&PR.race||"elfes",done:{},R:"06:00",st:"",dur:"",stock:"",need:"",sets:"",extra:""};
+try{S={...S,...JSON.parse(localStorage.getItem("elvAcad")||"{}")};if(PR&&PR.race)S.race=PR.race}catch(e){}
+const save=()=>{try{localStorage.setItem("elvAcad",JSON.stringify(S))}catch(e){}};
+const mn=t=>{const m=/^(\d{1,2}):(\d{2})$/.exec(t||"");return m?+m[1]*60+ +m[2]:null};
+const hh=x=>{x=((Math.round(x)%1440)+1440)%1440;return String(Math.floor(x/60)).padStart(2,"0")+":"+String(x%60).padStart(2,"0")};
+const num=x=>{const n=parseFloat(String(x).replace(",","."));return isNaN(n)?null:n};
+function render(){const a=$("app");a.replaceChildren(el("h1",{},"Elvenar · Assistant Académie de magie ",el("span",{cls:"pill"},"v0.5 (construction)")));a.append(toolbar());
+ a.append(el("div",{cls:"card m"},PR?"Profil « "+PR.profil+" » repris du tableau de bord : chapitre "+PR.chap+", race "+PR.race+", style "+PR.style+(PR.goals&&PR.goals.acad?" · objectif « Optimiser l’Académie » coché.":"."):"Aucun profil trouvé : ouvrez cet assistant depuis le tableau de bord pour reprendre votre profil. Tout fonctionne aussi seul.","  Source des conseils : onglet « Tuto Académie de magie » du classeur."));
+ // 1
+ const ls=el("select",{});LV.forEach(([l])=>ls.append(el("option",{value:l},"Niveau "+l)));ls.value=S.lvl;ls.onchange=()=>{S.lvl=+ls.value;save();render()};
+ const rs=el("select",{});[["elfes","Elfes : 5×5"],["humains","Humains : 5×4"]].forEach(x=>rs.append(el("option",{value:x[0]},x[1])));rs.value=S.race;rs.onchange=()=>{S.race=rs.value;save();render()};
+ const cur=LV.find(x=>x[0]===S.lvl);
+ const rest=LC.filter((_,i)=>i+1>S.lvl).reduce((s,c)=>[s[0]+c[1],s[1]+c[2],s[2]+c[3]],[0,0,0]);
+ a.append(el("div",{cls:"card"},el("h2",{},"1 · Mon Académie"),el("div",{cls:"row"},"Niveau actuel :",ls,"Race :",rs),
+  el("p",{},S.lvl<5?"➜ Première chose à faire : monter l’Académie au niveau 5 ("+(S.race==="elfes"?"5×5":"5×4")+" cases). Il vous reste à payer : "+fm(rest[0])+" pièces · "+fm(rest[1])+" marchandises · "+fm(rest[2])+" diamants.":el("span",{cls:"ok"},"✔ Niveau 5 atteint : passez à l’étape 2.")),
+  el("div",{style:"overflow-x:auto"},el("table",{},el("tr",{},el("th",{rowspan:"2"},"Niveau"),el("th",{colspan:"4"},"Coûts"),el("th",{colspan:"3"},"Bénéfices")),el("tr",{},["Durée","Pièces","Marchandises","Diamants","Durée / relique","Fragment de sort","Emplacements"].map(h=>el("th",{},h))),
+   LV.map(([l,d],i)=>{const c=LC[i];return el("tr",{cls:l===S.lvl?"sel":""},el("td",{},l),el("td",{},c[0]),el("td",{},c[1]?fm(c[1]):"/"),el("td",{},c[2]?fm(c[2]):"/"),el("td",{},c[3]?fm(c[3]):"/"),el("td",{},String(d).replace(".",",")+" h"),el("td",{},c[4]),el("td",{},c[5]))}))),
+  el("p",{cls:"m"},"Au niveau "+S.lvl+" : 1 relique toutes les "+String(cur[1]).replace(".",",")+" h, soit environ "+(24/cur[1]).toFixed(1).replace(".",",")+" par jour, "+LC[S.lvl-1][5]+" emplacement(s) de recette.")));
+ // 2
+ const all=GROUPS.reduce((n,g)=>n+g[1].length,0),dn=Object.keys(S.done).filter(k=>S.done[k]).length;
+ const gb=el("div",{});GROUPS.forEach(([t,l])=>{gb.append(el("b",{},t),el("div",{cls:"g"},l.map(n=>{const c=el("input",{type:"checkbox"});c.checked=!!S.done[n];c.onchange=()=>{S.done[n]=c.checked;save();render()};return el("label",{},c," "+n)})))});
+ a.append(el("div",{cls:"card"},el("h2",{},"2 · Bâtiments uniques à créer puis garder en inventaire"),el("p",{},"Un bâtiment unique n’existe qu’en 1 exemplaire (en ville ou en inventaire) : tant que vous l’avez, il ne réapparaît plus dans les recettes. Cochez ceux que vous avez déjà créés."),
+  el("div",{cls:"bar"},el("i",{style:"width:"+Math.round(dn/all*100)+"%"})),el("p",{},dn+" / "+all+" faits"+(dn===all?" ✔":"")),gb));
+ // 3
+ const rin=el("input",{type:"time",value:S.R}),sin=el("input",{type:"time",value:S.st}),din=el("input",{inputmode:"decimal",placeholder:"durée en h",value:S.dur,style:"width:90px"});
+ const o3=el("div",{}),r3=()=>{const R=mn(S.R),st=mn(S.st),d=num(S.dur);const t=[];
+  if(R!=null)o3.replaceChildren(el("p",{},el("b",{},"Vos 4 refresh de la journée : "),[0,1,2,3].map(k=>hh(R+360*k)).join(" · ")),
+   st!=null&&d!=null?(()=>{const df=((st-R)%360+360)%360,nx=df===0?st:st+(360-df),end=st+d*60;return end<=nx?el("p",{cls:"ok"},"✔ Cette recette finira à "+hh(end)+", avant le refresh de "+hh(nx)+"."):el("p",{cls:"no"},"⚠ Elle serait encore en cours au refresh de "+hh(nx)+" (fin à "+hh(end)+") : vous n’auriez que 4 recettes au lieu de 5. Utilisez un boost de temps ou lancez-la plus tôt.")})():el("p",{cls:"m"},"Indiquez l’heure de lancement et la durée d’une recette pour savoir si elle finit avant le refresh."))};
+ rin.onchange=()=>{S.R=rin.value;save();r3()};sin.onchange=()=>{S.st=sin.value;save();r3()};din.oninput=()=>{S.dur=din.value;save();r3()};
+ a.append(el("div",{cls:"card"},el("h2",{},"3 · Planning des recettes (refresh toutes les 6 h)"),el("div",{cls:"row"},"Heure d’un de vos refresh :",rin,"Je lance une recette à :",sin,"durée :",din),o3,el("p",{cls:"m"},"Pour décaler vos plages : refresh à 50 diamants ou une gorgée de clarté.")));r3();
+ // 4
+ const f=(k,ph,w)=>{const i=el("input",{inputmode:"decimal",placeholder:ph,value:S[k],style:"width:"+(w||100)+"px"});i.oninput=()=>{S[k]=i.value;save();c4()};return i};
+ const o4=el("div",{}),c4=()=>{const st=num(S.stock)||0,nd=num(S.need),rate=(num(S.sets)||0)+(num(S.extra)||0);
+  o4.replaceChildren(el("p",{},"Production de catalyseurs : ",el("b",{},String(rate).replace(".",",")+" par jour")," ("+(num(S.sets)||0)+" set(s) de bibliothèque × 1 + autres)."),
+   nd==null?el("p",{cls:"m"},"Indiquez les catalyseurs qu’il faut pour ouvrir le coffre mystique (valeur lue dans le jeu)."):st>=nd?el("p",{cls:"ok"},"✔ Vous avez déjà assez de catalyseurs."):rate>0?el("p",{},"Il vous en manque "+(nd-st)+" : environ ",el("b",{},Math.ceil((nd-st)/rate)+" jour(s)"),"."):el("p",{cls:"no"},"Sans production de catalyseurs, le coffre ne s’ouvrira pas : posez des sets de bibliothèque (5 à 6 conseillés)."))};
+ a.append(el("div",{cls:"card"},el("h2",{},"4 · Catalyseurs et coffre mystique"),el("div",{cls:"row"},"Catalyseurs en stock :",f("stock","0"),"nécessaires au coffre :",f("need","à lire dans le jeu",130),"sets de bibliothèque posés :",f("sets","0",70),"autres par jour :",f("extra","0",70)),o4));c4();
+ a.append(el("div",{cls:"card"},el("h2",{},"5 · Bâtiments liés à l’Académie"),el("div",{cls:"g"},LINK.map(([n,t])=>el("div",{},el("b",{},n),el("div",{cls:"m"},t))))));
+ const pl=el("select",{});for(let i=1;i<=9;i++)pl.append(el("option",{value:i-1},"Palier "+i+(i===1?" (le plus haut)":"")));
+ const rr=el("select",{});[["0","Culture"],["1","Population"]].forEach(x=>rr.append(el("option",{value:x[0]},x[1])));
+ const o7=el("div",{}),c7=()=>{const p=+pl.value,k=+rr.value,rows=CH.filter(b=>b[4][k]&&!b[4][k].startsWith("(")).map(b=>{const v=b[5][p][k]*24/b[3],c=b[1]*b[2];return{n:b[0],s:b[1]+"×"+b[2],v,pc:v/c}}).sort((x,y)=>y.pc-x.pc);
+  o7.replaceChildren(el("div",{style:"overflow-x:auto"},el("table",{},el("tr",{},["#","Bâtiment","Taille","Par 24 h","Par case et par 24 h"].map(h=>el("th",{},h))),rows.map((r,i)=>el("tr",{},el("td",{},i+1),el("td",{},r.n),el("td",{},r.s),el("td",{},fm(Math.round(r.v))),el("td",{},el("b",{},fm(Math.round(r.pc)))))))))};
+ pl.onchange=c7;rr.onchange=c7;
+ a.append(el("div",{cls:"card"},el("h2",{},"6 · Récompenses du coffre mystique : lesquelles gardent le plus de place ?"),el("div",{cls:"row"},"Palier :",pl,"Ressource :",rr),o7,el("p",{cls:"m"},"Valeurs du classeur, ramenées à 24 h (les bâtiments en « /12h » comptent ×2). Palier 1 = ligne du haut du tableau. Pour le gain de place, regardez la dernière colonne : production par case occupée. Caverne aux noix et Falaise des palourdes ont une 2e valeur sans titre dans le classeur : elles ne sont classées qu’en culture.")));c7();
+ a.append(el("div",{cls:"card"},el("h2",{},"7 · Les conseils du guide, dans l’ordre"),el("ol",{},TIPS.map(t=>el("li",{},t)))));
+ window.__open=window.__open||{};
+ [...a.querySelectorAll(":scope > .card")].forEach((c,i)=>{const h=c.querySelector(":scope > h2");if(!h||i<3)return;const d=document.createElement("details"),s=document.createElement("summary"),k=h.textContent;d.className="card";s.textContent=k;s.style.cssText="font-weight:700;cursor:pointer";h.remove();while(c.firstChild)d.append(c.firstChild);d.prepend(s);d.open=!!window.__open[k];d.ontoggle=()=>{window.__open[k]=d.open};c.replaceWith(d)});
+}
+render();
+</script>
+<!-- === MODULE DE LECTURE DU TABLEAU DE BORD (NE PAS MODIFIER EN DESSOUS) === -->
+<script>
+function checkGlobalCityData() {
+  try {
+    const rawData = localStorage.getItem('elvenar_shared_dashboard');
+    if(rawData) {
+      const data = JSON.parse(rawData);
+      let banner = document.getElementById('syncBanner');
+      if(!banner) {
+        banner = document.createElement('div');
+        banner.id = 'syncBanner';
+        banner.style.cssText = "background:#0f3460; border:1px solid #3498db; padding:8px; margin:10px auto; border-radius:4px; font-size:11px; color:#8f8; text-align:center; max-width:800px;";
+        document.body.insertBefore(banner, document.body.firstChild);
+      }
+      banner.innerHTML = `📡 <b>Cité connectée :</b> ${data.unlockedSpaces} cases débloquées au total | <b>${data.freeSpaces} espaces libres</b> (Mise à jour à ${data.lastUpdate})`;
+    }
+  } catch(e) {
+    console.log("Erreur lecture synchro :", e);
+  }
+}
+
+// Vérifie les données transmises par le planificateur dès l'ouverture
+window.addEventListener('DOMContentLoaded', checkGlobalCityData);
+setInterval(checkGlobalCityData, 3000);
+</script>
+</body>
+</html>
