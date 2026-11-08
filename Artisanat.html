@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Artisanat & Gardiens - Elvenar</title>
+    <style>
+        :root {
+            --bg-app: #0d130e;
+            --card-bg: #162218;
+            --text-main: #e2ebd8;
+            --primary: #458a57;
+            --primary-hover: #57a86c;
+            --accent: #e5b15d;
+            --input-bg: #0a0e0a;
+            --border-col: #273d2b;
+            --danger: #c94a4a;
+            --info: #3498db;
+            --muted: #9aa892;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, sans-serif;
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            padding: 20px;
+        }
+
+        main { max-width: 1200px; margin: 0 auto; }
+
+        header {
+            background: linear-gradient(135deg, #162218, #1c2e20);
+            border: 1px solid var(--border-col);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        h1 { margin: 0; font-size: 20px; color: var(--accent); }
+        .subtitle { font-size: 13px; color: var(--muted); }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-col);
+            border-radius: 8px;
+            padding: 18px;
+            margin-bottom: 16px;
+        }
+
+        h2 {
+            font-size: 16px;
+            color: var(--accent);
+            margin-top: 0;
+            border-bottom: 1px solid var(--border-col);
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .grid-6 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .slot-card {
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-sizing: border-box;
+            border: 1px solid var(--border-col);
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        /* Couleurs des statuts pour le suivi visuel */
+        .slot-card.status-ok { background: #112918; border-color: #2e6b3e; }
+        .slot-card.status-catalyseur { background: #332711; border-color: #a67c2e; }
+        .slot-card.status-encours { background: #122036; border-color: #3498db; }
+        .slot-card.status-piege { background: #3b0d0d; border-color: #8b0000; }
+        .slot-card.status-faite { background: #1a1a1a; border-color: #444; opacity: 0.6; }
+
+        input, select, textarea {
+            font: inherit;
+            padding: 5px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-col);
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-size: 12px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        button:hover { background-color: var(--primary-hover); }
+        button.secondary { background-color: #334437; color: var(--text-main); }
+        button.analyse-btn { background-color: var(--accent); color: #000; font-weight: bold; width: 100%; margin-top: 12px; padding: 10px; font-size: 13px; }
+        button.analyse-btn:hover { background-color: #f3c675; }
+        button.save-slot-btn { background-color: #2e6b3e; color: #fff; padding: 2px 6px; font-size: 10px; font-weight: bold; }
+        button.save-slot-btn:hover { background-color: #3d8c52; }
+
+        .stats-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stat-badge {
+            background: var(--input-bg);
+            border: 1px solid var(--border-col);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cost-row {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            background: rgba(0,0,0,0.2);
+            padding: 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .cost-row-inputs {
+            display: flex;
+            gap: 4px;
+        }
+
+        .costs-section {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 4px;
+            padding-top: 6px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.15);
+        }
+
+        .directive-box {
+            background: rgba(0,0,0,0.4);
+            border-left: 3px solid var(--accent);
+            padding: 8px;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #d2dbcb;
+            margin-top: 6px;
+            border-radius: 4px;
+            display: none;
+        }
+        .directive-box.visible { display: block; }
+
+        .lutrion-card {
+            border: 1px solid var(--border-col);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+        .lutrion-off { background: #261515; border-color: #702525; }
+        .lutrion-on { background: #132b1b; border-color: #2b703e; }
+
+        #syncBanner {
+            background: #0f3460;
+            border: 1px solid #3498db;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #a0e0ff;
+            text-align: center;
+            display: none;
+        }
+
+        #globalAnalysisResult {
+            margin-top: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--accent);
+            border-radius: 6px;
+            padding: 12px;
+            display: none;
+        }
+        #globalAnalysisResult.visible { display: block; }
+    </style>
+</head>
+<body>
+
+<main id="app">
+    <div id="syncBanner"></div>
+</main>
+
+<datalist id="listeRecettesApprises"></datalist>
+<datalist id="listeRessourcesCourantes">
+    <option value="Fragments de sort"></option>
+    <option value="Catalyseur de combinaison"></option>
+    <option value="Reliques"></option>
+    <option value="Sorts de manufacture"></option>
+    <option value="Bénédictions de temps"></option>
+    <option value="Durée : 2h"></option>
+    <option value="Durée : 3h"></option>
+    <option value="Durée : 5h"></option>
+    <option value="Durée : 8h"></option>
+</datalist>
+
+<script>
+    const RECETTES_DE_BASE = [
+        "Restauration Royale (RR)",
+        "Nourriture pour familiers",
+        "Amélioration d'unité : Déchaînement",
+        "Amélioration d'unité : Armurier éclair",
+        "Amélioration d'unité : Multiplicateur de mage",
+        "Bâtiment Militaire Éphémère",
+        "Extension de province",
+        "Bibliothèque (Élément)",
+        "Inspiration instantanée (PC)",
+        "Ancienne Connaissance (Savoir Ancien)"
+    ];
+
+    let saved = JSON.parse(localStorage.getItem("elvenar_artisanat_slots_v8")) || {};
+    let memoireRecettes = JSON.parse(localStorage.getItem("elvenar_recettes_custom")) || RECETTES_DE_BASE;
+
+    let state = {
+        catalyseursStock: saved.catalyseursStock !== undefined ? saved.catalyseursStock : 12,
+        fragmentsStock: saved.fragmentsStock !== undefined ? saved.fragmentsStock : 2400,
+        eventActif: saved.eventActif !== undefined ? saved.eventActif : false,
+        globalAnalysisHtml: saved.globalAnalysisHtml || "",
+        slots: saved.slots || [
+            { nom: "", qte: 1, statut: "ok", faite: false, c1_type: "Fragments de sort", c1_qte: "", c2_type: "Catalyseur de combinaison", c2_qte: "", c3_type: "Durée : 5h", c3_qte: "", analyseTexte: "" },
+            { nom: "", qte: 1, statut: "ok", faite: false, c1_type: "Fragments de sort", c1_qte: "", c2_type: "Catalyseur de combinaison", c2_qte: "", c3_type: "Durée : 5h", c3_qte: "", analyseTexte: "" },
+            { nom: "", qte: 1, statut: "ok", faite: false, c1_type: "Fragments de sort", c1_qte: "", c2_type: "Catalyseur de combinaison", c2_qte: "", c3_type: "Durée : 5h", c3_qte: "", analyseTexte: "" },
+            { nom: "", qte: 1, statut: "ok", faite: false, c1_type: "Fragments de sort", c1_qte: "", c2_type: "Catalyseur de combinaison", c2_qte: "", c3_type: "Durée : 5h", c3_qte: "", analyseTexte: "" },
+            { nom: "", qte: 1, statut: "ok", faite: false, c1_type: "Fragments de sort", c1_qte: "", c2_type: "Catalyseur de combinaison", c2_qte: "", c3_type: "Durée : 5h", c3_qte: "", analyseTexte: "" },
+            { nom: "", qte: 1, statut: "ok", faite: false, c1_type: "Fragments de sort", c1_qte: "", c2_type: "Catalyseur de combinaison", c2_qte: "", c3_type: "Durée : 5h", c3_qte: "", analyseTexte: "" }
+        ]
+    };
+
+    function saveState() {
+        localStorage.setItem("elvenar_artisanat_slots_v8", JSON.stringify(state));
+        localStorage.setItem("elvenar_recettes_custom", JSON.stringify(memoireRecettes));
+    }
+
+    function rafraichirDatalist() {
+        const datalist = document.getElementById("listeRecettesApprises");
+        if (!datalist) return;
+        datalist.innerHTML = "";
+        memoireRecettes.forEach(r => {
+            const opt = document.createElement("option");
+            opt.value = r;
+            datalist.append(opt);
+        });
+    }
+
+    function enregistrerNouvelleRecette(nomSaisi) {
+        let propre = nomSaisi.trim();
+        if (propre && !memoireRecettes.includes(propre)) {
+            memoireRecettes.push(propre);
+            saveState();
+            rafraichirDatalist();
+        }
+    }
+
+    function sauvegarderSlotUnique(idx) {
+        saveState();
+        const slotCard = document.getElementById(`slot-card-${idx}`);
+        if (slotCard) {
+            const originalBorder = slotCard.style.borderColor;
+            slotCard.style.borderColor = "#e5b15d";
+            setTimeout(() => {
+                slotCard.style.borderColor = originalBorder;
+            }, 600);
+        }
+    }
+
+    function updateSlotStatut(idx, val) {
+        let slot = state.slots[idx];
+        slot.statut = val;
+
+        if (val === 'encours') {
+            let nbCat = 0;
+            if (slot.c2_type.toLowerCase().includes("catalyseur")) {
+                nbCat = parseInt(slot.c2_qte) || 0;
+            } else if (slot.c1_type.toLowerCase().includes("catalyseur")) {
+                nbCat = parseInt(slot.c1_qte) || 0;
+            }
+
+            if (nbCat > 0) {
+                if (confirm(`Production lancée ! Voulez-vous déduire automatiquement ${nbCat} catalyseur(s) de votre stock ?`)) {
+                    state.catalyseursStock = Math.max(0, state.catalyseursStock - nbCat);
+                    document.getElementById("inpCat").value = state.catalyseursStock;
+                }
+            }
+        }
+
+        saveState();
+        render();
+    }
+
+    function updateSlotFaite(idx, val) {
+        state.slots[idx].faite = val;
+        saveState();
+        render();
+    }
+
+    function lancerAnalyseAssistant() {
+        let analyzedList = [];
+
+        state.slots.forEach((slot, idx) => {
+            // Si la recette est cochée "Faite", on l'ignore complètement dans les calculs et analyses
+            if (slot.faite) {
+                slot.analyseTexte = "✅ <b>RECETTE FAITE :</b> Ignorée des calculs et analyses.";
+                return;
+            }
+
+            const nom = (slot.nom || "").toLowerCase().trim();
+            if (!nom) {
+                slot.analyseTexte = "💡 Emplacement vide : Saisissez ou choisissez une recette.";
+                return;
+            }
+
+            enregistrerNouvelleRecette(slot.nom);
+
+            let resumeCouts = `Coûts : [${slot.c1_qte || 0} ${slot.c1_type}] | [${slot.c2_qte || 0} ${slot.c2_type}] | [${slot.c3_type}: ${slot.c3_qte || 'STD'}]`;
+            let score = 0;
+            let typeOffre = "standard";
+            let conseilTexte = "";
+
+            if (slot.statut === "piege" || nom.includes("piège") || nom.includes("périmé") || nom.includes("poudre")) {
+                score = 1;
+                typeOffre = "piege";
+                conseilTexte = `🔴 <b>PIÈGE / À ÉVITER :</b> '${slot.nom}' coûte trop cher pour ce que ça rapporte.<br><small>${resumeCouts}</small>`;
+            } else if (nom.includes("restauration royale") || nom.includes("rr") || nom.includes("nourriture") || nom.includes("déchaînement") || nom.includes("armurier") || nom.includes("multiplicateur")) {
+                score = 3;
+                typeOffre = "prioritaire";
+                conseilTexte = `🟢 <b>PRIORITÉ ABSOLUE :</b> '${slot.nom}' (x${slot.qte}) est extrêmement précieuse (Combat / Évolutifs). À fabriquer en priorité !<br><small>${resumeCouts}</small>`;
+            } else if (nom.includes("bibliothèque") || nom.includes("inspiration") || nom.includes("connaissance") || nom.includes("militaire")) {
+                score = 2;
+                typeOffre = "utile";
+                conseilTexte = `🟡 <b>TRÈS UTILE :</b> '${slot.nom}' offre un très bon soutien. À faire selon vos stocks.<br><small>${resumeCouts}</small>`;
+            } else {
+                score = 1.5;
+                typeOffre = "standard";
+                conseilTexte = `🔵 <b>STANDARD :</b> '${slot.nom}' est correcte sans être vitale.<br><small>${resumeCouts}</small>`;
+            }
+
+            slot.analyseTexte = conseilTexte;
+            analyzedList.push({ index: idx + 1, nom: slot.nom, score: score, type: typeOffre, texte: conseilTexte });
+        });
+
+        analyzedList.sort((a, b) => b.score - a.score);
+
+        let globalHtml = "<b>📊 Synthèse & Recommandations Globales (Par ordre de priorité) :</b><ol style='margin: 5px 0 0 20px; padding:0; font-size:12px;'>";
+        if (analyzedList.length === 0) {
+            globalHtml += "<li>Aucune recette active à analyser (toutes faites ou vides).</li>";
+        } else {
+            analyzedList.forEach((item, rank) => {
+                let actionColor = item.type === 'piege' ? 'color:#ff8888;' : (item.type === 'prioritaire' ? 'color:#7ce898; font-weight:bold;' : '');
+                globalHtml += `<li style="margin-bottom:4px; ${actionColor}"><b>Emplacement #${item.index} (${item.nom})</b> — ${item.type.toUpperCase()}</li>`;
+            });
+        }
+        globalHtml += "</ol>";
+
+        state.globalAnalysisHtml = globalHtml;
+        saveState();
+        render();
+    }
+
+    function toggleEvent(val) {
+        state.eventActif = (val === 'true');
+        saveState();
+        render();
+    }
+
+    function render() {
+        const app = document.getElementById("app");
+        let banner = document.getElementById("syncBanner");
+        if (!banner) {
+            banner = document.createElement("div");
+            banner.id = "syncBanner";
+            app.prepend(banner);
+        }
+        let bannerHTML = banner.outerHTML;
+        
+        app.innerHTML = bannerHTML;
+        app.append(
+            createHeader(),
+            createLutrionCard(),
+            createStockCard(),
+            createSlotsCard()
+        );
+        rafraichirDatalist();
+        checkGlobalCityData();
+    }
+
+    function createHeader() {
+        const header = document.createElement("header");
+        header.innerHTML = `
+            <div>
+                <h1>Artisanat & Gardiens</h1>
+                <div class="subtitle">Suivi des stocks, statuts colorés & Analyse Coach</div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <label style="font-size:12px; color:var(--accent);"><b>🎉 Événement en cours ?</b></label>
+                <select style="width:auto; font-size:12px; padding:4px;" onchange="toggleEvent(this.value)">
+                    <option value="false" ${!state.eventActif ? 'selected' : ''}>❌ Non</option>
+                    <option value="true" ${state.eventActif ? 'selected' : ''}>🟢 Oui</option>
+                </select>
+                <button class="secondary" onclick="viderSlots()">🔄 Vider</button>
+            </div>
+        `;
+        return header;
+    }
+
+    function createLutrionCard() {
+        const card = document.createElement("div");
+        card.className = `lutrion-card ${state.eventActif ? 'lutrion-on' : 'lutrion-off'}`;
+        card.innerHTML = state.eventActif 
+            ? `<div style="font-size:13px; font-weight:bold; color:#7ce898;">🦦 Lutrion — ACTIF : Double tes gains lors de l'ouverture des coffres d'événement.</div>`
+            : `<div style="font-size:13px; font-weight:bold; color:#f08888;">🦦 Lutrion — EN SOMMEIL : Aucun événement actif, ne l'invoque pas.</div>`;
+        return card;
+    }
+
+    function createStockCard() {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+            <h2>📦 Stocks & Ressources Académie</h2>
+            <div class="stats-bar">
+                <div class="stat-badge">
+                    <label><b>🔮 Catalyseurs :</b></label>
+                    <input type="number" id="inpCat" value="${state.catalyseursStock}" min="0" style="width: 60px; text-align: center;" onchange="updateStocks()">
+                </div>
+                <div class="stat-badge">
+                    <label><b>✨ Fragments :</b></label>
+                    <input type="number" id="inpFrag" value="${state.fragmentsStock}" min="0" style="width: 80px; text-align: center;" onchange="updateStocks()">
+                </div>
+            </div>
+        `;
+        return card;
+    }
+
+    function createSlotsCard() {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+            <h2>🎯 Les 6 Emplacements de l'Académie</h2>
+            <div style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">
+                💡 <b>Suivi de production :</b> Renseigne tes données et clique sur <b>💾 Enregistrer</b> dans chaque case pour figer les modifications.
+            </div>
+        `;
+
+        const grid = document.createElement("div");
+        grid.className = "grid-6";
+
+        state.slots.forEach((slot, idx) => {
+            let statusClass = "status-ok";
+            if (slot.faite) statusClass = "status-faite";
+            else if (slot.statut === "catalyseur") statusClass = "status-catalyseur";
+            else if (slot.statut === "encours") statusClass = "status-encours";
+            else if (slot.statut === "piege") statusClass = "status-piege";
+
+            const slotDiv = document.createElement("div");
+            slotDiv.id = `slot-card-${idx}`;
+            slotDiv.className = `slot-card ${statusClass}`;
+            
+            slotDiv.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--accent);">
+                    <b>Emplacement #${idx + 1}</b>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <label style="font-size:11px; display:flex; align-items:center; gap:3px; cursor:pointer; color:#fff;" title="Cocher si la recette est faite pour l'ignorer des calculs">
+                            <input type="checkbox" ${slot.faite ? 'checked' : ''} onchange="updateSlotFaite(${idx}, this.checked)" style="width:auto; margin:0;"> Faite
+                        </label>
+                        <select style="font-size:11px; padding:2px 4px; width:auto;" onchange="updateSlotStatut(${idx}, this.value)" ${slot.faite ? 'disabled' : ''}>
+                            <option value="ok" ${slot.statut === 'ok' ? 'selected' : ''}>🟢 Faisable</option>
+                            <option value="catalyseur" ${slot.statut === 'catalyseur' ? 'selected' : ''}>🟡 Manque stock</option>
+                            <option value="encours" ${slot.statut === 'encours' ? 'selected' : ''}>🔵 En cours</option>
+                            <option value="piege" ${slot.statut === 'piege' ? 'selected' : ''}>🔴 Piège / Interdit</option>
+                        </select>
+                        <button class="save-slot-btn" onclick="sauvegarderSlotUnique(${idx})" title="Enregistrer cette case">💾 Enregistrer</button>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 6px;">
+                    <input type="text" list="listeRecettesApprises" placeholder="Nom de la recette..." value="${slot.nom}" style="flex: 3;" oninput="updateSlotField(${idx}, 'nom', this.value)" ${slot.faite ? 'disabled' : ''}>
+                    <input type="number" placeholder="Qté" value="${slot.qte}" min="1" style="flex: 1; text-align: center;" oninput="updateSlotField(${idx}, 'qte', this.value)" ${slot.faite ? 'disabled' : ''}>
+                </div>
+
+                <div class="costs-section">
+                    <!-- Coût 1 -->
+                    <div class="cost-row">
+                        <span style="font-size:10px; color:var(--muted);">Coût 1 :</span>
+                        <div class="cost-row-inputs">
+                            <input type="number" placeholder="Qté" value="${slot.c1_qte}" style="width:70px; text-align:center;" oninput="updateSlotField(${idx}, 'c1_qte', this.value)" ${slot.faite ? 'disabled' : ''}>
+                            <input type="text" list="listeRessourcesCourantes" placeholder="Objet / Ressource..." value="${slot.c1_type}" oninput="updateSlotField(${idx}, 'c1_type', this.value)" ${slot.faite ? 'disabled' : ''}>
+                        </div>
+                    </div>
+
+                    <!-- Coût 2 -->
+                    <div class="cost-row">
+                        <span style="font-size:10px; color:var(--muted);">Coût 2 :</span>
+                        <div class="cost-row-inputs">
+                            <input type="number" placeholder="Qté" value="${slot.c2_qte}" style="width:70px; text-align:center;" oninput="updateSlotField(${idx}, 'c2_qte', this.value)" ${slot.faite ? 'disabled' : ''}>
+                            <input type="text" list="listeRessourcesCourantes" placeholder="Objet / Ressource..." value="${slot.c2_type}" oninput="updateSlotField(${idx}, 'c2_type', this.value)" ${slot.faite ? 'disabled' : ''}>
+                        </div>
+                    </div>
+
+                    <!-- Coût 3 / Durée -->
+                    <div class="cost-row">
+                        <span style="font-size:10px; color:var(--muted);">Coût 3 / Durée :</span>
+                        <div class="cost-row-inputs">
+                            <input type="number" placeholder="Qté / h" value="${slot.c3_qte}" style="width:70px; text-align:center;" oninput="updateSlotField(${idx}, 'c3_qte', this.value)" ${slot.faite ? 'disabled' : ''}>
+                            <input type="text" list="listeRessourcesCourantes" placeholder="Durée ou Objet..." value="${slot.c3_type}" oninput="updateSlotField(${idx}, 'c3_type', this.value)" ${slot.faite ? 'disabled' : ''}>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="directive-box ${slot.analyseTexte ? 'visible' : ''}">
+                    ${slot.analyseTexte || 'En attente d\'analyse...'}
+                </div>
+            `;
+            grid.append(slotDiv);
+        });
+
+        card.append(grid);
+
+        const btnAnalyse = document.createElement("button");
+        btnAnalyse.className = "analyse-btn";
+        btnAnalyse.textContent = "🔍 Lancer l'analyse des offres par l'Assistant";
+        btnAnalyse.onclick = lancerAnalyseAssistant;
+        card.append(btnAnalyse);
+
+        const globalBox = document.createElement("div");
+        globalBox.id = "globalAnalysisResult";
+        if (state.globalAnalysisHtml) {
+            globalBox.className = "visible";
+            globalBox.innerHTML = state.globalAnalysisHtml;
+        }
+        card.append(globalBox);
+
+        return card;
+    }
+
+    function updateStocks() {
+        state.catalyseursStock = parseInt(document.getElementById("inpCat").value) || 0;
+        state.fragmentsStock = parseInt(document.getElementById("inpFrag").value) || 0;
+        saveState();
+    }
+
+    function updateSlotField(idx, field, val) {
+        state.slots[idx][field] = val;
+        saveState();
+    }
+
+    function viderSlots() {
+        if(confirm("Voulez-vous effacer les 6 emplacements actuels ?")) {
+            state.slots = state.slots.map(() => ({
+                nom: "", qte: 1, statut: "ok", faite: false,
+                c1_type: "Fragments de sort", c1_qte: "",
+                c2_type: "Catalyseur de combinaison", c2_qte: "",
+                c3_type: "Durée : 5h", c3_qte: "",
+                analyseTexte: ""
+            }));
+            state.globalAnalysisHtml = "";
+            saveState();
+            render();
+        }
+    }
+
+    function checkGlobalCityData() {
+      try {
+        const rawData = localStorage.getItem('elvenar_shared_dashboard');
+        const banner = document.getElementById('syncBanner');
+        if(rawData && banner) {
+          const data = JSON.parse(rawData);
+          banner.style.display = 'block';
+          banner.innerHTML = `📡 <b>Cité connectée :</b> ${data.unlockedSpaces} cases débloquées | <b>${data.freeSpaces} espaces libres</b>`;
+        } else if(banner) {
+          banner.style.display = 'none';
+        }
+      } catch(e) {}
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        render();
+        setInterval(checkGlobalCityData, 3000);
+    });
+</script>
+</body>
+</html>
