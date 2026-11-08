@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title> Négociations </title>
+<style>
+:root {
+  --bg: #E6E9EA;
+  --surface: #F4F6F6;
+  --ink: #1B2529;
+  --muted: #4E5C64;
+  --line: #BCC6CB;
+  --accent: #8F4A05;
+  --accent-ink: #FFFFFF;
+  --ok: #1F6B3F;
+  --warn: #8A4B00;
+  --danger: #9B2C2C;
+  --focus: #1857C4;
+  --chip-l: 84%;
+  --chip-edge: 42%;
+  --chip-ink: #1B2529;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161C1F;
+    --surface: #202A2E;
+    --ink: #E8EDEF;
+    --muted: #A2B0B7;
+    --line: #36454D;
+    --accent: #F0A04B;
+    --accent-ink: #1B1204;
+    --ok: #6FCF97;
+    --warn: #F2B35E;
+    --danger: #F08A8A;
+    --focus: #8DB7FF;
+    --chip-l: 28%;
+    --chip-edge: 62%;
+    --chip-ink: #F2F6F7;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161C1F;
+  --surface: #202A2E;
+  --ink: #E8EDEF;
+  --muted: #A2B0B7;
+  --line: #36454D;
+  --accent: #F0A04B;
+  --accent-ink: #1B1204;
+  --ok: #6FCF97;
+  --warn: #F2B35E;
+  --danger: #F08A8A;
+  --focus: #8DB7FF;
+  --chip-l: 28%;
+  --chip-edge: 62%;
+  --chip-ink: #F2F6F7;
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+main {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3rem;
+}
+h1 {
+  font-family: var(--serif);
+  font-size: 2rem;
+  line-height: 1.15;
+  margin: 0.5rem 0 0.5rem;
+  letter-spacing: 0.005em;
+}
+h2 {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  line-height: 1.2;
+  margin: 0 0 0.5rem;
+}
+p { margin: 0 0 0.75rem; max-width: 62ch; }
+.lead { color: var(--muted); }
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+.muted { color: var(--muted); }
+.small { font-size: 0.9rem; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+/* Réglages */
+details.panel > summary {
+  cursor: pointer;
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  line-height: 1.3;
+  padding: 0.1rem 0;
+}
+details.panel[open] > summary { margin-bottom: 0.75rem; }
+.field { margin: 0 0 1.1rem; border: 0; padding: 0; min-width: 0; }
+.field > legend, .field > .label { font-weight: 600; padding: 0; margin-bottom: 0.35rem; display: block; }
+.hint { color: var(--muted); font-size: 0.9rem; margin: 0.25rem 0 0; }
+.row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.stepper { display: inline-flex; align-items: center; gap: 0.5rem; }
+.stepper output { min-width: 2ch; text-align: center; font-weight: 700; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+button, input[type="text"] { font: inherit; color: inherit; }
+.btn {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+.btn.small-btn { min-height: 2.25rem; padding: 0.25rem 0.6rem; font-size: 0.9rem; }
+.pill {
+  min-height: 2.5rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.pill[aria-pressed="true"] {
+  background: hsl(var(--h, 0) var(--s, 0%) var(--chip-l));
+  border-color: hsl(var(--h, 0) var(--s, 0%) var(--chip-edge));
+  color: var(--chip-ink);
+  font-weight: 700;
+}
+.pill[aria-pressed="true"]::before { content: "✓ "; }
+.add-line { display: flex; gap: 0.5rem; margin-top: 0.6rem; flex-wrap: wrap; }
+.add-line input[type="text"] {
+  flex: 1 1 10rem;
+  min-height: 2.5rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  background: var(--bg);
+}
+.check { display: flex; gap: 0.6rem; align-items: flex-start; }
+.check input { margin-top: 0.4rem; width: 1.1rem; height: 1.1rem; }
+.radio { display: flex; gap: 0.6rem; align-items: flex-start; margin-bottom: 0.4rem; }
+.radio input { margin-top: 0.4rem; width: 1.1rem; height: 1.1rem; }
+
+/* La combinaison : ce que l'on regarde en premier */
+.tablet {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0.25rem;
+}
+.slot {
+  flex: 1 1 6.5rem;
+  min-width: 5.5rem;
+  min-height: 5rem;
+  padding: 0.5rem 0.4rem;
+  border-radius: 0.5rem;
+  border: 3px solid hsl(var(--h, 0) var(--s, 0%) var(--chip-edge));
+  background: hsl(var(--h, 0) var(--s, 0%) var(--chip-l));
+  color: var(--chip-ink);
+  font-weight: 700;
+  font-size: 1.05rem;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+}
+.slot .pos { font-size: 0.8rem; font-weight: 400; opacity: 0.85; }
+.slot { cursor: default; }
+.slot select {
+  width: 100%;
+  min-height: 2.5rem;
+  border: 0;
+  border-radius: 0.3rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-align: center;
+  text-align-last: center;
+  cursor: pointer;
+}
+.slot select option { color: #1B2529; background: #FFFFFF; }
+.mini .sym { margin-left: 0.35rem; font-weight: 800; }
+.turns { font-weight: 600; }
+.cost { margin: 0.4rem 0 0; }
+.slot.locked { opacity: 0.85; border-style: dashed; }
+.slot select:disabled { cursor: not-allowed; color: inherit; opacity: 1; }
+.found { min-height: 3.25rem; display: flex; align-items: center; justify-content: center; border-radius: 0.4rem; border: 2px solid var(--ok); color: var(--ok); font-weight: 700; padding: 0.3rem 0.4rem; text-align: center; }
+.costgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.5rem 0.9rem; }
+.costgrid label { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.costgrid input[type="number"] { width: 6.5rem; min-height: 2.25rem; padding: 0.2rem 0.4rem; border: 1px solid var(--line); border-radius: 0.4rem; background: var(--bg); color: var(--ink); font: inherit; text-align: right; }
+.chance { margin: 0.5rem 0 0; }
+
+.mini { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.mini span {
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.3rem;
+  border: 2px solid hsl(var(--h, 0) var(--s, 0%) var(--chip-edge));
+  background: hsl(var(--h, 0) var(--s, 0%) var(--chip-l));
+  color: var(--chip-ink);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Réponse du jeu */
+.fbbox { margin-top: 1rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+.fbgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1rem; }
+.fbitem .label { font-weight: 600; display: block; }
+.fbstate {
+  width: 100%;
+  min-height: 3.25rem;
+  white-space: normal;
+  line-height: 1.25;
+  padding: 0.3rem 0.4rem;
+  border-radius: 0.4rem;
+  border: 2px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 600;
+}
+.fbstate[data-s="1"] { border-color: var(--warn); color: var(--warn); }
+.fbstate[data-s="2"] { border-color: var(--ok); background: var(--ok); color: var(--bg); }
+.fbslots { display: flex; flex-direction: column; gap: 0.75rem; }
+.fbslots > div { min-width: 0; }
+.seg { display: flex; gap: 0.35rem; }
+.segbtn { flex: 1 1 0; min-width: 0; min-height: 3.25rem; padding: 0.3rem 0.25rem; border: 2px solid var(--line); border-radius: 0.4rem; background: transparent; color: var(--ink); cursor: pointer; font: inherit; font-size: 0.9rem; font-weight: 600; line-height: 1.2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.1rem; text-align: center; }
+.segbtn .segsym { font-size: 1.15rem; font-weight: 800; }
+.segbtn[aria-pressed="true"][data-s="0"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.segbtn[aria-pressed="true"][data-s="1"] { background: var(--warn); color: var(--bg); border-color: var(--warn); }
+.segbtn[aria-pressed="true"][data-s="2"] { background: var(--ok); color: var(--bg); border-color: var(--ok); }
+.fbslots .who { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.2rem; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem; align-items: center; }
+
+/* Historique */
+.hist { list-style: none; padding: 0; margin: 0; }
+.hist li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--line);
+}
+.hist li:first-child { border-top: 0; }
+.hist .n { font-weight: 700; min-width: 4.5rem; }
+.peg { display: inline-block; width: 0.85rem; height: 0.85rem; border-radius: 50%; margin-right: 0.15rem; vertical-align: -0.1rem; }
+.peg.full { background: var(--ink); border: 2px solid var(--ink); }
+.peg.ring { border: 2px solid var(--ink); }
+.res { font-weight: 600; }
+
+.msg { border-left: 4px solid var(--accent); padding: 0.4rem 0.8rem; margin: 0.75rem 0; background: var(--bg); border-radius: 0 0.3rem 0.3rem 0; }
+.msg.ok { border-color: var(--ok); }
+.msg.bad { border-color: var(--danger); }
+dl.poss { margin: 0; }
+dl.poss dt { font-weight: 600; margin-top: 0.6rem; }
+dl.poss dd { margin: 0.2rem 0 0; }
+ul.combos { margin: 0.4rem 0 0; padding-left: 1.2rem; }
+footer { margin-top: 1.5rem; color: var(--muted); font-size: 0.85rem; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* Scène à l'image du jeu */
+.ribbon { justify-content: center; padding: 0.35rem 0.6rem; border-radius: 0.4rem; background: var(--accent); color: var(--accent-ink); margin: 0.5rem 0; }
+.ribbon .turns { color: inherit; }
+.ribbon .stepper output { color: inherit; }
+.cast { display: grid; grid-template-columns: repeat(var(--n, 5), minmax(0, 1fr)); gap: 0.4rem; margin-top: 0.75rem; }
+.person { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; min-width: 0; }
+.cast.many { grid-template-columns: repeat(auto-fit, minmax(4.4rem, 1fr)); row-gap: 0.9rem; }
+.arch {
+  position: relative; width: 100%; aspect-ratio: 3 / 4; max-height: 10rem;
+  border: 3px solid var(--line); border-radius: 50% 50% 0.6rem 0.6rem / 32% 32% 0.6rem 0.6rem;
+  background: linear-gradient(170deg, hsl(262 42% 46%), hsl(214 52% 56%));
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.arch .num { font-family: var(--serif); font-size: 1.8rem; font-weight: 700; color: #FFFFFF; }
+.person.done .arch { border-color: var(--ok); }
+.arch .tick { position: absolute; bottom: 0.3rem; left: 50%; transform: translateX(-50%); width: 1.7rem; height: 1.7rem; border-radius: 50%; background: #1F6B3F; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+.badge {
+  width: 3rem; height: 3rem; border-radius: 50%; padding: 0; cursor: pointer;
+  border: 4px solid var(--line); background: var(--surface);
+  display: flex; align-items: center; justify-content: center; font-size: 1.4rem; line-height: 1;
+}
+.badge:disabled { cursor: default; border-color: var(--ok); }
+.badge.r0 { border-color: var(--danger); }
+.badge.r1 { border-color: var(--warn); }
+.badge.r2 { border-color: var(--ok); }
+.rname { font-size: 0.62rem; line-height: 1.15; text-align: center; overflow-wrap: break-word; min-height: 2.3em; }
+.bubble {
+  width: 100%; min-height: 3.4em; padding: 0.25rem 0.2rem; border: 2px solid var(--line); border-radius: 0.5rem;
+  background: var(--surface); color: var(--muted); font-size: 0.68rem; line-height: 1.15; text-align: center;
+  display: flex; align-items: center; justify-content: center;
+}
+.bubble.b0 { color: var(--danger); border-color: var(--danger); }
+.bubble.b1 { color: var(--warn); border-color: var(--warn); }
+.bubble.b2 { color: var(--ok); border-color: var(--ok); }
+.ans { display: flex; flex-direction: column; gap: 0.3rem; width: 100%; }
+.ansbtn { min-height: 2.6rem; width: 100%; padding: 0; border: 2px solid var(--line); border-radius: 0.4rem; background: transparent; color: var(--ink); font-size: 1.2rem; font-weight: 800; cursor: pointer; }
+.ansbtn.a2 { border-color: var(--ok); color: var(--ok); }
+.ansbtn.a1 { border-color: var(--warn); color: var(--warn); }
+.ansbtn.a0 { border-color: var(--danger); color: var(--danger); }
+.ansbtn[aria-pressed="true"].a2 { background: var(--ok); color: var(--bg); }
+.ansbtn[aria-pressed="true"].a1 { background: var(--warn); color: var(--bg); }
+.ansbtn[aria-pressed="true"].a0 { background: var(--danger); color: var(--bg); }
+.picker { margin-top: 0.75rem; padding: 0.6rem; border: 2px solid var(--line); border-radius: 0.5rem; background: var(--surface); }
+.ptitle { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; font-family: var(--serif); font-weight: 700; margin-bottom: 0.5rem; }
+.ptitle .btn { font-family: var(--sans); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr)); gap: 0.4rem; }
+.tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.1rem; min-height: 4.6rem; padding: 0.3rem; border: 2px solid var(--line); border-radius: 0.4rem; background: transparent; color: var(--ink); cursor: pointer; font: inherit; }
+.tile .ico { font-size: 1.5rem; line-height: 1.1; }
+.tile .tname { font-size: 0.75rem; line-height: 1.1; text-align: center; }
+.tile .tcost { font-size: 0.75rem; font-weight: 700; }
+.tile.dim { opacity: 0.45; }
+.tile.sel { border-color: var(--accent); border-width: 3px; }
+@media (min-width: 34rem) {
+  .badge { width: 3.6rem; height: 3.6rem; font-size: 1.8rem; }
+  .arch .num { font-size: 2.4rem; }
+  .rname { font-size: 0.85rem; }
+  .bubble { font-size: 0.8rem; }
+}
+</style>
+</head>
+<body>
+<div id="elvbar" style="position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:#7a4b1e;color:#fff">
+<button data-a="dash">⬅ Tableau de bord</button><button data-a="m">A−</button><button data-a="p">A+</button><button data-a="v">🔊 Lire</button><button data-a="c">◐ Contraste</button></div>
+<style>#elvbar button{font:inherit;padding:6px 10px;border:0;border-radius:6px;background:#fff3;color:#fff;cursor:pointer}html.hc{filter:invert(1) hue-rotate(180deg)}</style>
+<script>(function(){var A={fs:16,hc:false},DASH="Elvenar_Dashboard_Joueur_v0.9.html";
+try{var m=/[#&]p=([^&]+)/.exec(location.hash);var P=m?JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1]))))):null;var L=JSON.parse(localStorage.getItem("elvAcc")||"{}");var a=(P&&P.acc)||L||{};if(a.fs)A.fs=a.fs;A.hc=!!a.hc}catch(e){}
+function ap(){document.documentElement.style.fontSize=(A.fs/16*100)+"%";document.documentElement.classList.toggle("hc",A.hc);try{localStorage.setItem("elvAcc",JSON.stringify(A))}catch(e){}}ap();
+document.getElementById("elvbar").addEventListener("click",function(e){var k=e.target.getAttribute&&e.target.getAttribute("data-a");if(!k)return;
+if(k==="dash")location.href=DASH;if(k==="m"){A.fs=Math.max(12,A.fs-2);ap()}if(k==="p"){A.fs=Math.min(30,A.fs+2);ap()}if(k==="c"){A.hc=!A.hc;ap()}
+if(k==="v"){var s=window.speechSynthesis;if(!s)return;if(s.speaking){s.cancel();return}var u=new SpeechSynthesisUtterance(document.querySelector("main").innerText);u.lang="fr-FR";s.speak(u)}})})();</script>
+
+<main>
+  <header>
+    <h1>Assistant négociations <span style="font-size:.6em;opacity:.7">v0.2</span></h1>
+    <p class="lead">À l'écran « Trouvez la bonne combinaison », chaque personnage attend une ressource. À chaque tour, indiquez ce que le jeu répond : l'outil garde les combinaisons encore possibles et propose le meilleur essai suivant.</p>
+  </header>
+
+  <details class="panel" id="reglages" open>
+    <summary>Réglages de la partie</summary>
+    <div id="reglagesContenu"></div>
+  </details>
+
+  <div id="jeu" aria-live="polite"></div>
+
+  <footer>Les calculs se font dans votre navigateur : rien n'est envoyé ni enregistré.</footer>
+</main>
+
+<script>
+(function () {
+"use strict";
+
+/* SOLVER-START */
+var MAX_COMBOS = 3000000;
+
+function permCount(k, n) {
+  var r = 1, i;
+  for (i = 0; i < n; i++) r *= (k - i);
+  return r;
+}
+
+function buildAll(n, k, dup) {
+  var count = dup ? Math.pow(k, n) : permCount(k, n);
+  if (count > MAX_COMBOS) return { tooMany: true, count: count };
+  var codes = new Uint8Array(count * n);
+  var pos = 0;
+  var cur = new Array(n);
+  var used = new Array(k);
+  var c;
+  for (c = 0; c < k; c++) used[c] = false;
+  (function rec(i) {
+    var j, cc;
+    if (i === n) {
+      for (j = 0; j < n; j++) codes[pos * n + j] = cur[j];
+      pos++;
+      return;
+    }
+    for (cc = 0; cc < k; cc++) {
+      if (!dup && used[cc]) continue;
+      cur[i] = cc;
+      if (!dup) used[cc] = true;
+      rec(i + 1);
+      if (!dup) used[cc] = false;
+    }
+  })(0);
+  return { codes: codes, count: count };
+}
+
+var tmpG = new Int8Array(64);
+var tmpC = new Int8Array(64);
+var tmpS = new Int8Array(16);
+
+/* Deux façons de lire la réponse du jeu :
+   - "classic" : deux nombres (bien placées, mal placées), comme au Mastermind ;
+   - "persons" : une réponse par personnage (règle observée sur trois parties) :
+        2 = correct ; 1 = mauvaise personne (un AUTRE personnage qui n'est pas
+        encore correct attend cette ressource) ; 0 = personne n'en a besoin ;
+   - "personsCount" : pareil, mais en comptant combien de personnages
+        demandent la ressource (comme le jeu Wordle). */
+function feedback(mode, g, codes, off, n, k) {
+  var i, c, gi, ci, black, white, code, mul, s;
+  if (mode === "classic") {
+    for (c = 0; c < k; c++) { tmpG[c] = 0; tmpC[c] = 0; }
+    black = 0;
+    for (i = 0; i < n; i++) {
+      gi = g[i]; ci = codes[off + i];
+      if (gi === ci) black++;
+      else { tmpG[gi]++; tmpC[ci]++; }
+    }
+    white = 0;
+    for (c = 0; c < k; c++) white += tmpG[c] < tmpC[c] ? tmpG[c] : tmpC[c];
+    return black * 10 + white;
+  }
+  if (mode === "persons") {
+    for (c = 0; c < k; c++) tmpC[c] = 0;
+    for (i = 0; i < n; i++) if (g[i] !== codes[off + i]) tmpC[codes[off + i]] = 1;
+    code = 0; mul = 1;
+    for (i = 0; i < n; i++) {
+      if (g[i] === codes[off + i]) s = 2;
+      else s = tmpC[g[i]] ? 1 : 0;
+      code += s * mul;
+      mul *= 3;
+    }
+    return code;
+  }
+  /* "personsCount" : tient compte du nombre de personnages qui demandent la ressource */
+  for (c = 0; c < k; c++) tmpC[c] = 0;
+  for (i = 0; i < n; i++) {
+    ci = codes[off + i];
+    if (g[i] === ci) tmpS[i] = 2;
+    else { tmpS[i] = 0; tmpC[ci]++; }
+  }
+  code = 0; mul = 1;
+  for (i = 0; i < n; i++) {
+    if (tmpS[i] !== 2) {
+      if (tmpC[g[i]] > 0) { tmpS[i] = 1; tmpC[g[i]]--; }
+    }
+    code += tmpS[i] * mul;
+    mul *= 3;
+  }
+  return code;
+}
+
+function fullCode(mode, n) {
+  var code = 0, mul = 1, i;
+  if (mode === "classic") return n * 10;
+  for (i = 0; i < n; i++) { code += 2 * mul; mul *= 3; }
+  return code;
+}
+
+function encodeSlots(states) {
+  var code = 0, mul = 1, i;
+  for (i = 0; i < states.length; i++) { code += states[i] * mul; mul *= 3; }
+  return code;
+}
+
+function allIndexes(count) {
+  var a = new Int32Array(count), i;
+  for (i = 0; i < count; i++) a[i] = i;
+  return a;
+}
+
+function filterCands(mode, g, target, codes, cands, n, k) {
+  var out = [], t, idx;
+  for (t = 0; t < cands.length; t++) {
+    idx = cands[t];
+    if (feedback(mode, g, codes, idx * n, n, k) === target) out.push(idx);
+  }
+  return out;
+}
+
+function codeAt(codes, idx, n) {
+  var g = [], i;
+  for (i = 0; i < n; i++) g.push(codes[idx * n + i]);
+  return g;
+}
+
+function sampleIdx(arr, max) {
+  var out = [], i, step;
+  if (arr.length <= max) {
+    for (i = 0; i < arr.length; i++) out.push(arr[i]);
+    return out;
+  }
+  step = arr.length / max;
+  for (i = 0; i < max; i++) out.push(arr[Math.floor(i * step)]);
+  return out;
+}
+
+/* Coût d'un essai : les personnages déjà ✓ (verrouillés) ne sont plus facturés. */
+function guessCost(g, costs, locked, n) {
+  var i, s = 0;
+  for (i = 0; i < n; i++) if (locked[i] < 0) s += costs[g[i]] || 0;
+  return s;
+}
+
+/* Parmi les combinaisons encore possibles (toutes aussi probables), la moins chère. */
+function cheapest(codes, cands, n, costs, locked) {
+  var best = cands[0], bestCost = Infinity, t, lim = Math.min(cands.length, 3000), c;
+  for (t = 0; t < lim; t++) {
+    c = guessCost(codeAt(codes, cands[t], n), costs, locked, n);
+    if (c < bestCost) { bestCost = c; best = cands[t]; }
+  }
+  return codeAt(codes, best, n);
+}
+
+/* Choix de l'essai conseillé selon le nombre de tours restants (left,
+   tour en cours compris) :
+   - 1 tour : une combinaison encore possible (la moins chère) ;
+   - 2 tours : celle qui sépare le mieux les possibilités, pour avoir
+     le plus de chances de trouver au dernier tour ;
+   - 3 tours ou plus : celle qui réduit le plus vite le nombre de possibilités.
+   À qualité égale, on garde l'essai le moins cher. */
+function suggest(mode, codes, cands, n, k, left, costs, locked) {
+  var m = cands.length, guesses, tests, size, bins, gi, g, t, b, classes, sq, cost;
+  var best, bestClasses, bestSq, bestCost, better;
+  costs = costs || [];
+  locked = locked || [];
+  if (m === 0) return null;
+  if (m <= 2 || left <= 1) return cheapest(codes, cands, n, costs, locked);
+  guesses = sampleIdx(cands, 400);
+  tests = m <= 3000 ? cands : sampleIdx(cands, 3000);
+  size = mode === "classic" ? 100 : Math.pow(3, n);
+  bins = new Int32Array(size);
+  best = guesses[0];
+  bestClasses = -1;
+  bestSq = Infinity;
+  bestCost = Infinity;
+  for (gi = 0; gi < guesses.length; gi++) {
+    g = codeAt(codes, guesses[gi], n);
+    bins.fill(0);
+    for (t = 0; t < tests.length; t++) bins[feedback(mode, g, codes, tests[t] * n, n, k)]++;
+    classes = 0; sq = 0;
+    for (b = 0; b < size; b++) if (bins[b]) { classes++; sq += bins[b] * bins[b]; }
+    cost = guessCost(g, costs, locked, n);
+    if (left === 2) {
+      better = classes > bestClasses ||
+        (classes === bestClasses && (sq < bestSq || (sq === bestSq && cost < bestCost)));
+    } else {
+      better = sq < bestSq ||
+        (sq === bestSq && (classes > bestClasses || (classes === bestClasses && cost < bestCost)));
+    }
+    if (better) { best = guesses[gi]; bestClasses = classes; bestSq = sq; bestCost = cost; }
+  }
+  best = codeAt(codes, best, n);
+  if (left === 2 && m <= 3000 && costs.some(function (x) { return x > 0; })) {
+    best = economize(mode, codes, tests, n, k, best, left, costs, locked);
+  }
+  return best;
+}
+
+/* Économie : à chances égales, on remplace une ressource chère par une moins chère
+   (jamais une ressource que plus personne n'attend, jamais un personnage déjà ✓). */
+function economize(mode, codes, tests, n, k, g, left, costs, locked) {
+  var size = mode === "classic" ? 100 : Math.pow(3, n);
+  var bins = new Int32Array(size);
+  var order = [], present = [], c, t, i, j, r, improved, passes, cur, m, ok, g2, pos;
+  for (c = 0; c < k; c++) { order.push(c); present.push(false); }
+  order.sort(function (a, b) { return (costs[a] || 0) - (costs[b] || 0); });
+  for (t = 0; t < tests.length; t++) for (i = 0; i < n; i++) present[codes[tests[t] * n + i]] = true;
+  function metric(gg) {
+    var b, classes = 0, sq = 0, tt;
+    bins.fill(0);
+    for (tt = 0; tt < tests.length; tt++) bins[feedback(mode, gg, codes, tests[tt] * n, n, k)]++;
+    for (b = 0; b < size; b++) if (bins[b]) { classes++; sq += bins[b] * bins[b]; }
+    return { classes: classes, sq: sq };
+  }
+  g = g.slice();
+  cur = metric(g);
+  improved = true;
+  passes = 0;
+  while (improved && passes < 4) {
+    improved = false;
+    passes++;
+    pos = [];
+    for (i = 0; i < n; i++) if (locked[i] < 0) pos.push(i);
+    pos.sort(function (a, b) { return (costs[g[b]] || 0) - (costs[g[a]] || 0); });
+    for (j = 0; j < pos.length; j++) {
+      i = pos[j];
+      for (c = 0; c < k; c++) {
+        r = order[c];
+        if ((costs[r] || 0) >= (costs[g[i]] || 0)) break;
+        if (!present[r] || r === g[i]) continue;
+        g2 = g.slice();
+        g2[i] = r;
+        m = metric(g2);
+        ok = left === 2 ? m.classes >= cur.classes : m.sq <= cur.sq;
+        if (ok) { g = g2; cur = m; improved = true; break; }
+      }
+    }
+  }
+  return g;
+}
+
+/* Chance exacte de trouver la combinaison avec cet essai et les tours
+   restants (calculée seulement quand c'est possible : 1 ou 2 tours). */
+function winChance(mode, codes, cands, g, n, k, left) {
+  var m = cands.length, size, bins, t, b, classes, full;
+  if (m === 0 || m > 3000 || left < 1 || left > 2) return null;
+  size = mode === "classic" ? 100 : Math.pow(3, n);
+  bins = new Int32Array(size);
+  for (t = 0; t < m; t++) bins[feedback(mode, g, codes, cands[t] * n, n, k)]++;
+  full = fullCode(mode, n);
+  if (left === 1) return bins[full] / m;
+  classes = 0;
+  for (b = 0; b < size; b++) if (bins[b]) classes++;
+  return classes / m;
+}
+
+function summarize(codes, cands, n, k) {
+  var perSlot = [], present = [], c, i, t, idx, seen, col;
+  for (i = 0; i < n; i++) { perSlot.push(new Array(k)); for (c = 0; c < k; c++) perSlot[i][c] = false; }
+  for (c = 0; c < k; c++) present.push(0);
+  seen = new Array(k);
+  for (t = 0; t < cands.length; t++) {
+    idx = cands[t];
+    for (c = 0; c < k; c++) seen[c] = false;
+    for (i = 0; i < n; i++) {
+      col = codes[idx * n + i];
+      perSlot[i][col] = true;
+      seen[col] = true;
+    }
+    for (c = 0; c < k; c++) if (seen[c]) present[c]++;
+  }
+  return { perSlot: perSlot, present: present };
+}
+/* SOLVER-END */
+
+/* ---------- Données de départ ---------- */
+var BASE = [
+  { name: "Pièces", h: 46, s: 75, cost: 45000 },
+  { name: "Marchandises", h: 14, s: 55, cost: 4500 },
+  { name: "Marbre", h: 48, s: 12, cost: 570 },
+  { name: "Acier", h: 214, s: 32, cost: 570 },
+  { name: "Planches", h: 30, s: 60, cost: 570 },
+  { name: "Cristal", h: 182, s: 55, cost: 430 },
+  { name: "Parchemins", h: 72, s: 38, cost: 0 },
+  { name: "Soie", h: 280, s: 45, cost: 0 },
+  { name: "Élixir", h: 356, s: 62, cost: 0 },
+  { name: "Poussière magique", h: 318, s: 45, cost: 0 },
+  { name: "Gemmes", h: 336, s: 62, cost: 0 }
+];
+
+var STATE_LABELS = ["Personne n'en a besoin", "Mauvaise personne", "Correct (✓ vert)"];
+var STATE_SYMBOLS = ["✗", "↔", "✓"];
+var STATE_SHORT = ["Personne n'en a besoin", "Mauvaise personne", "Correct"];
+
+var state = {
+  n: 5,
+  turns: 3,
+  dup: true,
+  mode: "persons",
+  res: BASE.map(function (r, i) { return { name: r.name, h: r.h, s: r.s, cost: r.cost, on: i < 6 }; }),
+  active: [],
+  codes: null,
+  total: 0,
+  cand: null,
+  history: [],
+  guess: null,
+  suggestion: null,
+  fbBlack: 0,
+  fbWhite: 0,
+  fbSlots: [],
+  won: false,
+  error: "",
+  focusSlot: null,
+  fbSet: [],
+  pick: null,
+  notice: ""
+};
+
+/* ---------- Petits outils d'affichage ---------- */
+function h(tag, props) {
+  var e = document.createElement(tag), i, kid, key;
+  props = props || {};
+  for (key in props) {
+    if (!Object.prototype.hasOwnProperty.call(props, key)) continue;
+    if (key === "text") e.textContent = props[key];
+    else if (key === "cls") e.className = props[key];
+    else if (key === "style") e.setAttribute("style", props[key]);
+    else if (key === "on") {
+      var evs = props[key], ev;
+      for (ev in evs) if (Object.prototype.hasOwnProperty.call(evs, ev)) e.addEventListener(ev, evs[ev]);
+    } else if (props[key] === true) e.setAttribute(key, "");
+    else if (props[key] === false || props[key] == null) { /* rien */ }
+    else e.setAttribute(key, String(props[key]));
+  }
+  for (i = 2; i < arguments.length; i++) {
+    kid = arguments[i];
+    if (kid == null) continue;
+    e.appendChild(typeof kid === "string" ? document.createTextNode(kid) : kid);
+  }
+  return e;
+}
+function fmt(x) { return Number(x).toLocaleString("fr-FR"); }
+function plural(n, one, many) { return n + " " + (n > 1 ? many : one); }
+function colorOf(c) { return state.res[state.active[c]]; }
+function colorStyle(c) {
+  var r = colorOf(c);
+  return "--h:" + r.h + ";--s:" + r.s + "%";
+}
+function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+function isPersons() { return state.mode !== "classic"; }
+function turnsLeft() { return state.turns - state.history.length; }
+
+/* Coûts par couleur (même ordre que la liste des ressources activées) */
+function costsArr() {
+  return state.active.map(function (ri) { return Number(state.res[ri].cost) || 0; });
+}
+
+/* Personnages déjà ✓ : le jeu les verrouille. locked[i] = couleur trouvée, ou -1. */
+function lockedArr() {
+  var out = [], i, j, hh;
+  for (i = 0; i < state.n; i++) out.push(-1);
+  if (!isPersons()) return out;
+  for (j = 0; j < state.history.length; j++) {
+    hh = state.history[j];
+    for (i = 0; i < state.n; i++) if (hh.fb.states[i] === 2) out[i] = hh.guess[i];
+  }
+  return out;
+}
+
+function resetFeedback() {
+  var i, lk = lockedArr();
+  state.fbBlack = 0;
+  state.fbWhite = 0;
+  state.fbSlots = [];
+  state.fbSet = [];
+  state.pick = null;
+  state.notice = "";
+  for (i = 0; i < state.n; i++) {
+    state.fbSlots.push(lk[i] >= 0 ? 2 : 0);
+    state.fbSet.push(lk[i] >= 0);
+  }
+}
+
+function suggestNow(left) {
+  return suggest(state.mode, state.codes, state.cand, state.n, state.active.length, left, costsArr(), lockedArr());
+}
+
+function totalSpent() {
+  var s = 0;
+  state.history.forEach(function (e) { s += e.cost || 0; });
+  return s;
+}
+
+/* ---------- Partie ---------- */
+function newGame() {
+  var k, n, b;
+  state.active = [];
+  state.res.forEach(function (r, i) { if (r.on) state.active.push(i); });
+  k = state.active.length;
+  n = state.n;
+  state.history = [];
+  state.won = false;
+  state.error = "";
+  state.codes = null;
+  state.cand = null;
+  state.guess = null;
+  state.suggestion = null;
+  resetFeedback();
+  if (k < 2) {
+    state.error = "Activez au moins deux ressources.";
+  } else if (!state.dup && n > k) {
+    state.error = "Sans doublon, il faut au moins autant de ressources que de personnages : activez d'autres ressources ou autorisez les doublons.";
+  } else {
+    b = buildAll(n, k, state.dup);
+    if (b.tooMany) {
+      state.error = "Il y aurait " + fmt(b.count) + " combinaisons : c'est trop pour cet outil (limite : 3 millions). Réduisez le nombre de personnages ou de ressources activées.";
+    } else {
+      state.codes = b.codes;
+      state.total = b.count;
+      state.cand = allIndexes(b.count);
+      state.suggestion = suggestNow(turnsLeft());
+      state.guess = state.suggestion.slice();
+    }
+  }
+  render();
+}
+
+function recompute() {
+  var n = state.n, k = state.active.length, i, hh, left;
+  state.cand = allIndexes(state.total);
+  for (i = 0; i < state.history.length; i++) {
+    hh = state.history[i];
+    state.cand = filterCands(state.mode, hh.guess, hh.target, state.codes, state.cand, n, k);
+  }
+  state.won = false;
+  if (state.history.length) {
+    hh = state.history[state.history.length - 1];
+    state.won = state.cand.length > 0 && isWin(hh);
+  }
+  left = turnsLeft();
+  state.suggestion = (state.cand.length && !state.won && left > 0) ? suggestNow(left) : null;
+  state.guess = state.suggestion ? state.suggestion.slice() : null;
+  resetFeedback();
+}
+
+function isWin(entry) {
+  var i;
+  if (state.mode === "classic") return entry.fb.black === state.n;
+  for (i = 0; i < entry.fb.states.length; i++) if (entry.fb.states[i] !== 2) return false;
+  return true;
+}
+
+function validate() {
+  var n = state.n, k = state.active.length, target, fb, entry, left;
+  if (!state.guess) return;
+  if (isPersons()) {
+    var lk = lockedArr(), manque = false, q;
+    for (q = 0; q < n; q++) if (lk[q] < 0 && !state.fbSet[q]) manque = true;
+    if (manque) {
+      state.notice = "Indiquez d'abord la réponse du jeu pour chaque personnage (✓, ↔ ou ✗ sous chacun).";
+      render();
+      return;
+    }
+  }
+  if (state.mode === "classic") {
+    target = state.fbBlack * 10 + state.fbWhite;
+    fb = { black: state.fbBlack, white: state.fbWhite };
+  } else {
+    target = encodeSlots(state.fbSlots);
+    fb = { states: state.fbSlots.slice() };
+  }
+  entry = { guess: state.guess.slice(), target: target, fb: fb,
+            cost: guessCost(state.guess, costsArr(), lockedArr(), n) };
+  state.history.push(entry);
+  state.cand = filterCands(state.mode, entry.guess, target, state.codes, state.cand, n, k);
+  state.won = state.cand.length > 0 && isWin(entry);
+  left = turnsLeft();
+  state.suggestion = (state.cand.length && !state.won && left > 0) ? suggestNow(left) : null;
+  state.guess = state.suggestion ? state.suggestion.slice() : null;
+  resetFeedback();
+  var reg = document.getElementById("reglages");
+  if (reg) reg.open = false;
+  render();
+  var essai = document.getElementById("essai");
+  if (essai && essai.scrollIntoView) essai.scrollIntoView({ block: "start" });
+}
+
+function setTurnsLeft(v) {
+  if (v < 1 || v > 10) return;
+  state.turns = state.history.length + v;
+  state.suggestion = suggestNow(v);
+  state.guess = state.suggestion ? state.suggestion.slice() : null;
+  resetFeedback();
+  render();
+}
+
+function undoLast() {
+  if (!state.history.length) return;
+  state.history.pop();
+  recompute();
+  render();
+}
+
+/* ---------- Réglages ---------- */
+function stepper(label, value, min, max, hint, onChange) {
+  var dec = h("button", { cls: "btn", type: "button", "aria-label": label + " : un de moins", text: "−", on: { click: function () {
+    if (value > min) onChange(value - 1);
+  } } });
+  var inc = h("button", { cls: "btn", type: "button", "aria-label": label + " : un de plus", text: "+", on: { click: function () {
+    if (value < max) onChange(value + 1);
+  } } });
+  return h("div", { cls: "field" },
+    h("span", { cls: "label", text: label }),
+    h("div", { cls: "stepper" }, dec, h("output", { text: String(value) }), inc),
+    h("p", { cls: "hint", text: hint }));
+}
+
+function renderSettings() {
+  var box = document.getElementById("reglagesContenu");
+  clear(box);
+
+  box.appendChild(stepper("Nombre de personnages", state.n, 2, 8,
+    "Comptez les portraits affichés à l'écran « Trouvez la bonne combinaison ».",
+    function (v) { state.n = v; newGame(); renderSettings(); }));
+
+  box.appendChild(stepper("Nombre de tours au total", state.turns, 1, 10,
+    "Le jeu affiche « Tours restants » : au départ, c'est ce nombre. Si le jeu affiche 2 après un tour joué, il y en a 3 au total.",
+    function (v) { state.turns = v; newGame(); renderSettings(); }));
+
+  var chips = h("div", { cls: "row" });
+  state.res.forEach(function (r) {
+    chips.appendChild(h("button", {
+      cls: "pill", type: "button", "aria-pressed": r.on ? "true" : "false",
+      style: "--h:" + r.h + ";--s:" + r.s + "%", text: r.name,
+      on: { click: function () { r.on = !r.on; newGame(); renderSettings(); } }
+    }));
+  });
+  var nameInput = h("input", { type: "text", id: "nouvelleRessource", maxlength: "24", "aria-label": "Nom d'une autre ressource", placeholder: "Autre ressource" });
+  var addBtn = h("button", { cls: "btn", type: "button", text: "Ajouter", on: { click: function () {
+    var v = nameInput.value.replace(/\s+/g, " ").trim(), i, exists = false;
+    if (!v) return;
+    for (i = 0; i < state.res.length; i++) if (state.res[i].name.toLowerCase() === v.toLowerCase()) exists = true;
+    if (exists) { nameInput.value = ""; return; }
+    state.res.push({ name: v, h: (state.res.length * 47) % 360, s: 50, cost: 0, on: true });
+    newGame();
+    renderSettings();
+  } } });
+  box.appendChild(h("div", { cls: "field" },
+    h("span", { cls: "label", text: "Ressources proposées par le jeu" }),
+    chips,
+    h("div", { cls: "add-line" }, nameInput, addBtn),
+    h("p", { cls: "hint", text: "Activez celles de la fenêtre « Choisissez une ressource » (" + state.active.length + " activées). Les ressources grisées par le jeu n'ont plus de preneur : l'outil le déduit tout seul de vos réponses." })
+  ));
+
+  var costGrid = h("div", { cls: "costgrid" });
+  state.res.forEach(function (r, i) {
+    if (!r.on) return;
+    var inp = h("input", { type: "number", min: "0", step: "1", value: String(r.cost || 0), "aria-label": "Coût d'une offre : " + r.name,
+      on: { change: function (ev) { var v = parseFloat(ev.target.value); r.cost = isFinite(v) && v >= 0 ? v : 0; render(); } } });
+    costGrid.appendChild(h("label", {}, h("span", { text: r.name }), inp));
+  });
+  box.appendChild(h("div", { cls: "field" },
+    h("span", { cls: "label", text: "Coût d'une offre (facultatif)" }),
+    costGrid,
+    h("p", { cls: "hint", text: "Repris de l'écran « Coût par offre ». Entre deux essais aussi bons, l'outil garde le moins cher et affiche la dépense. Un personnage déjà ✓ n'est plus facturé." })
+  ));
+
+  var dupInput = h("input", { type: "checkbox", id: "doublons", on: { change: function () { state.dup = dupInput.checked; newGame(); } } });
+  if (state.dup) dupInput.checked = true;
+  box.appendChild(h("div", { cls: "field" },
+    h("label", { cls: "check", for: "doublons" }, dupInput,
+      h("span", { text: "Plusieurs personnages peuvent attendre la même ressource" })),
+    h("p", { cls: "hint", text: "Décochez si le jeu garantit une ressource différente pour chaque personnage." })
+  ));
+
+  var r1 = h("input", { type: "radio", name: "mode", id: "modeP", on: { change: function () { state.mode = "persons"; newGame(); } } });
+  var r2 = h("input", { type: "radio", name: "mode", id: "modePC", on: { change: function () { state.mode = "personsCount"; newGame(); } } });
+  var r3 = h("input", { type: "radio", name: "mode", id: "modeC", on: { change: function () { state.mode = "classic"; newGame(); } } });
+  if (state.mode === "persons") r1.checked = true;
+  else if (state.mode === "personsCount") r2.checked = true;
+  else r3.checked = true;
+  box.appendChild(h("fieldset", { cls: "field" },
+    h("legend", { text: "Réponse du jeu après chaque tour" }),
+    h("label", { cls: "radio", for: "modeP" }, r1,
+      h("span", { text: "Une réponse par personnage. « Mauvaise personne » : un autre personnage, pas encore ✓, attend cette ressource. « Personne n'en a besoin » : aucun personnage restant ne l'attend. Les personnages ✓ sont verrouillés. (Règle observée sur trois parties.)" })),
+    h("label", { cls: "radio", for: "modePC" }, r2,
+      h("span", { text: "Variante : même chose, mais en comptant combien de personnages attendent la ressource. À essayer seulement si l'outil annonce une contradiction." })),
+    h("label", { cls: "radio", for: "modeC" }, r3,
+      h("span", { text: "Deux nombres : combien de ressources sont bien placées, combien sont mal placées." }))
+  ));
+
+  box.appendChild(h("p", { cls: "hint", text: "Changer un réglage (hors coûts) recommence la partie." }));
+}
+
+/* ---------- Affichage d'une combinaison ---------- */
+function tilesStatic(arr, states) {
+  var wrap = h("div", { cls: "mini" });
+  arr.forEach(function (c, i) {
+    var span = h("span", { style: colorStyle(c) }, colorOf(c).name);
+    if (states) {
+      span.appendChild(h("span", { cls: "sym", "aria-hidden": "true", text: STATE_SYMBOLS[states[i]] }));
+      span.appendChild(h("span", { cls: "sr", text: " : " + STATE_LABELS[states[i]] }));
+    }
+    wrap.appendChild(span);
+  });
+  return wrap;
+}
+
+function pegsText(entry) {
+  var wrap = h("span", { cls: "res" }), i;
+  if (state.mode === "classic") {
+    for (i = 0; i < entry.fb.black; i++) wrap.appendChild(h("span", { cls: "peg full", "aria-hidden": "true" }));
+    for (i = 0; i < entry.fb.white; i++) wrap.appendChild(h("span", { cls: "peg ring", "aria-hidden": "true" }));
+    wrap.appendChild(document.createTextNode(" " + plural(entry.fb.black, "bien placée", "bien placées") + ", " + plural(entry.fb.white, "mal placée", "mal placées")));
+  }
+  return wrap;
+}
+
+/* ---------- Écran principal ---------- */
+var ICONS = { "Pièces": "💰", "Marchandises": "📦", "Marbre": "⬜", "Acier": "⚙️", "Planches": "🌲", "Cristal": "💎",
+  "Parchemins": "📜", "Soie": "🧵", "Élixir": "🧪", "Poussière magique": "✨", "Gemmes": "💠" };
+function iconOf(c) { return ICONS[colorOf(c).name] || "●"; }
+function shortCost(x) {
+  x = Number(x) || 0;
+  if (x <= 0) return "";
+  return x >= 10000 ? (x / 1000).toFixed(1).replace(".", ",") + " K" : fmt(Math.round(x));
+}
+/* Ressources que plus aucun personnage n'attend (le jeu les grise aussi) */
+function absentColors() {
+  var k = state.active.length, out = [], c, sm;
+  for (c = 0; c < k; c++) out.push(false);
+  if (!state.history.length || !state.cand || !state.cand.length) return out;
+  sm = summarize(state.codes, state.cand, state.n, k);
+  for (c = 0; c < k; c++) if (sm.present[c] === 0) out[c] = true;
+  return out;
+}
+
+function render() {
+  renderSettings();
+  var root = document.getElementById("jeu");
+  clear(root);
+
+  if (state.error) {
+    root.appendChild(h("div", { cls: "panel" }, h("div", { cls: "msg bad", text: state.error })));
+    return;
+  }
+
+  var n = state.n, k = state.active.length, left = turnsLeft(), locked = lockedArr();
+
+  /* Essai en cours */
+  var sec = h("section", { cls: "panel", id: "essai" });
+  var num = state.history.length + 1;
+
+  if (state.won) {
+    var last = state.history[state.history.length - 1];
+    sec.appendChild(h("h2", { text: "Combinaison trouvée en " + plural(state.history.length, "tour", "tours") }));
+    sec.appendChild(h("div", { cls: "msg ok", text: "Bravo, la combinaison était :" }));
+    sec.appendChild(tilesStatic(last.guess));
+    sec.appendChild(h("div", { cls: "actions" },
+      h("button", { cls: "btn primary", type: "button", text: "Nouvelle partie", on: { click: newGame } }),
+      h("button", { cls: "btn", type: "button", text: "Annuler le dernier essai", on: { click: undoLast } })));
+  } else if (state.cand.length === 0) {
+    sec.appendChild(h("h2", { text: "Aucune combinaison ne correspond" }));
+    sec.appendChild(h("div", { cls: "msg bad", text: "Les réponses saisies se contredisent, ou un réglage ne correspond pas au jeu. Annulez le dernier essai et ressaisissez la réponse. Si vous avez proposé deux fois la même ressource ou si un personnage était déjà ✓, essayez l'autre façon de lire la réponse du jeu dans les réglages. Vérifiez aussi le nombre de personnages, les ressources et l'option des doublons." }));
+    sec.appendChild(h("div", { cls: "actions" },
+      h("button", { cls: "btn primary", type: "button", text: "Annuler le dernier essai", on: { click: undoLast } }),
+      h("button", { cls: "btn", type: "button", text: "Nouvelle partie", on: { click: newGame } })));
+  } else if (left <= 0) {
+    sec.appendChild(h("h2", { text: "Plus de tours" }));
+    sec.appendChild(h("div", { cls: "msg bad", text: "Les tours sont épuisés et la combinaison n'a pas été trouvée. Les combinaisons encore possibles sont indiquées plus bas." }));
+    sec.appendChild(h("div", { cls: "actions" },
+      h("button", { cls: "btn primary", type: "button", text: "Nouvelle partie", on: { click: newGame } }),
+      h("button", { cls: "btn", type: "button", text: "Annuler le dernier essai", on: { click: undoLast } })));
+  } else {
+    sec.appendChild(h("h2", { text: "Essai " + num + " conseillé" }));
+    sec.appendChild(h("div", { cls: "row ribbon" },
+      h("span", { cls: "turns", text: "Tours restants :" }),
+      h("div", { cls: "stepper" },
+        h("button", { cls: "btn small-btn", type: "button", "aria-label": "Tours restants : un de moins", text: "−", disabled: left <= 1, on: { click: function () { setTurnsLeft(left - 1); } } }),
+        h("output", { text: String(left) }),
+        h("button", { cls: "btn small-btn", type: "button", "aria-label": "Tours restants : un de plus", text: "+", disabled: left >= 10, on: { click: function () { setTurnsLeft(left + 1); } } }))));
+    sec.appendChild(h("p", { cls: "hint", text: "Si ce nombre n'est pas celui du bandeau « Tours restants » du jeu, corrigez-le ici avec − ou +." }));
+    sec.appendChild(h("p", { text: state.cand.length === 1
+      ? "Il ne reste qu'une combinaison possible : jouez-la dans le donjon."
+      : "Jouez cette combinaison dans le donjon, de gauche à droite, puis indiquez la réponse du jeu." }));
+    var nbLocked = locked.filter(function (x) { return x >= 0; }).length;
+    if (nbLocked) {
+      sec.appendChild(h("p", { cls: "hint", text: plural(nbLocked, "personnage est déjà ✓", "personnages sont déjà ✓") + " : le jeu les verrouille, vous ne choisissez que les autres." }));
+    }
+
+    if (isPersons()) {
+      sec.appendChild(h("p", { cls: "hint", text: "Comme dans le jeu, de gauche à droite. Touchez la pastille ronde d'un personnage pour choisir sa ressource, puis indiquez sa réponse : ✓ correct (vert), ↔ mauvaise personne (doré), ✗ personne n'en a besoin (rouge)." }));
+      var absent = absentColors();
+      var cast = h("div", { cls: "cast" + (n > 6 ? " many" : ""), style: "--n:" + n });
+      state.guess.forEach(function (c, i) {
+        var isLocked = locked[i] >= 0;
+        var st = state.fbSlots[i];
+        var answered = state.fbSet[i];
+        var person = h("div", { cls: "person" + (isLocked ? " done" : "") });
+        person.appendChild(h("div", { cls: "arch" },
+          h("span", { cls: "num", text: String(i + 1) }),
+          isLocked ? h("span", { cls: "tick", "aria-hidden": "true", text: "✓" }) : null));
+        person.appendChild(h("button", {
+          cls: "badge" + (answered ? " r" + st : ""), type: "button", disabled: isLocked,
+          "aria-label": "Personnage " + (i + 1) + " : " + colorOf(c).name + (isLocked ? " (déjà ✓)" : ". Appuyez pour changer de ressource."),
+          on: { click: function () { state.pick = (state.pick === i) ? null : i; render(); } }
+        }, h("span", { cls: "ico", "aria-hidden": "true", text: iconOf(c) })));
+        person.appendChild(h("span", { cls: "rname", text: colorOf(c).name }));
+        person.appendChild(h("div", { cls: "bubble" + (answered ? " b" + st : " empty"), text: answered ? STATE_SHORT[st] : "Réponse du jeu ?" }));
+        if (!isLocked) {
+          var ans = h("div", { cls: "ans", role: "group", "aria-label": "Réponse du jeu pour le personnage " + (i + 1) });
+          [2, 1, 0].forEach(function (s) {
+            ans.appendChild(h("button", {
+              cls: "ansbtn a" + s, type: "button", "aria-pressed": (answered && st === s) ? "true" : "false",
+              "aria-label": "Personnage " + (i + 1) + " : " + STATE_LABELS[s],
+              on: { click: function () { state.fbSlots[i] = s; state.fbSet[i] = true; state.notice = ""; render(); } }
+            }, STATE_SYMBOLS[s]));
+          });
+          person.appendChild(ans);
+        }
+        cast.appendChild(person);
+      });
+      sec.appendChild(cast);
+
+      if (state.pick !== null && locked[state.pick] < 0) {
+        var pi = state.pick;
+        var panel = h("div", { cls: "picker", role: "group", "aria-label": "Choisissez une ressource pour le personnage " + (pi + 1) });
+        panel.appendChild(h("div", { cls: "ptitle" },
+          h("span", { text: "Choisissez une ressource · personnage " + (pi + 1) }),
+          h("button", { cls: "btn small-btn", type: "button", text: "Fermer", on: { click: function () { state.pick = null; render(); } } })));
+        var tiles = h("div", { cls: "tiles" });
+        state.active.forEach(function (ri, ci) {
+          var cs = shortCost(state.res[ri].cost);
+          tiles.appendChild(h("button", {
+            cls: "tile" + (absent[ci] ? " dim" : "") + (state.guess[pi] === ci ? " sel" : ""), type: "button",
+            "aria-label": state.res[ri].name + (absent[ci] ? " (plus personne n'en a besoin)" : ""),
+            on: { click: function () { state.guess[pi] = ci; state.pick = null; render(); } }
+          }, h("span", { cls: "ico", "aria-hidden": "true", text: iconOf(ci) }),
+             h("span", { cls: "tname", text: state.res[ri].name }),
+             cs ? h("span", { cls: "tcost", text: cs }) : null));
+        });
+        panel.appendChild(tiles);
+        if (absent.some(function (x) { return x; })) {
+          panel.appendChild(h("p", { cls: "hint", text: "Les ressources estompées : plus aucun personnage ne les attend (comme les ressources grisées du jeu)." }));
+        }
+        sec.appendChild(panel);
+      }
+    } else {
+    var tablet = h("div", { cls: "tablet" });
+    state.guess.forEach(function (c, i) {
+      var isLocked = locked[i] >= 0;
+      var sel = h("select", { "aria-label": "Personnage " + (i + 1) + " : ressource proposée" + (isLocked ? " (déjà ✓)" : ""), "data-i": i, disabled: isLocked,
+        on: { change: function (ev) { state.guess[i] = parseInt(ev.target.value, 10); state.focusSlot = i; render(); } } });
+      state.active.forEach(function (ri, ci) {
+        var opt = h("option", { value: ci, text: state.res[ri].name });
+        if (ci === c) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      tablet.appendChild(h("div", { cls: "slot" + (isLocked ? " locked" : ""), style: colorStyle(c) }, sel,
+        h("span", { cls: "pos", text: "personnage " + (i + 1) + (isLocked ? " · ✓ trouvé" : "") })));
+    });
+    sec.appendChild(tablet);
+    }
+
+    var modified = state.suggestion && state.guess.join(",") !== state.suggestion.join(",");
+    sec.appendChild(h("p", { cls: "hint", text: isPersons()
+      ? "Pour jouer autre chose que ce conseil (ou pour saisir un tour déjà joué), changez la ressource d'un personnage avec sa pastille ronde."
+      : "Pour jouer autre chose que ce conseil (ou pour saisir un tour déjà joué), changez la ressource de chaque personnage avec la liste." }));
+    if (modified) {
+      sec.appendChild(h("button", { cls: "btn small-btn", type: "button", text: "Reprendre le conseil", on: { click: function () { state.guess = state.suggestion.slice(); render(); } } }));
+    }
+    var chance = winChance(state.mode, state.codes, state.cand, state.guess, n, k, left);
+    if (chance !== null) {
+      sec.appendChild(h("p", { cls: "chance", text: "Chance de trouver la combinaison avec cet essai et les " + plural(left, "tour restant", "tours restants") + " : environ " + Math.round(chance * 100) + " %." }));
+    }
+    var costNow = guessCost(state.guess, costsArr(), locked, n);
+    if (costNow > 0 || totalSpent() > 0) {
+      sec.appendChild(h("p", { cls: "cost", text: "Coût de cet essai : " + fmt(Math.round(costNow)) + (totalSpent() > 0 ? " · déjà dépensé : " + fmt(Math.round(totalSpent())) : "") }));
+      if (left === 2) sec.appendChild(h("p", { cls: "hint", text: "Cet essai est choisi pour garder les mêmes chances au moindre coût : il peut proposer une ressource peu chère plusieurs fois." }));
+    }
+
+    if (state.mode === "classic") {
+      var fb = h("div", { cls: "fbbox" });
+      fb.appendChild(h("h2", { text: "Réponse du jeu" }));
+      var grid = h("div", { cls: "fbgrid" });
+      grid.appendChild(counter("Bien placées", "bonne ressource, bon personnage", state.fbBlack, 0, n - state.fbWhite, function (v) { state.fbBlack = v; render(); }));
+      grid.appendChild(counter("Mal placées", "bonne ressource, mauvais personnage", state.fbWhite, 0, n - state.fbBlack, function (v) { state.fbWhite = v; render(); }));
+      fb.appendChild(grid);
+      sec.appendChild(fb);
+    } else if (state.notice) {
+      sec.appendChild(h("div", { cls: "msg bad", text: state.notice }));
+    }
+
+    sec.appendChild(h("div", { cls: "actions" },
+      h("button", { cls: "btn primary", type: "button", text: "Valider cet essai", on: { click: validate } }),
+      h("button", { cls: "btn", type: "button", text: "Annuler le dernier essai", disabled: state.history.length === 0, on: { click: undoLast } }),
+      h("button", { cls: "btn", type: "button", text: "Nouvelle partie", on: { click: newGame } })));
+  }
+  root.appendChild(sec);
+
+  /* Tours joués */
+  if (state.history.length) {
+    var hs = h("section", { cls: "panel" });
+    hs.appendChild(h("h2", { text: "Tours joués" }));
+    if (isPersons()) hs.appendChild(h("p", { cls: "hint", text: "✓ correct · ↔ mauvaise personne · ✗ personne n'en a besoin" }));
+    var ol = h("ol", { cls: "hist" });
+    state.history.forEach(function (entry, i) {
+      ol.appendChild(h("li", {}, h("span", { cls: "n", text: "Tour " + (i + 1) }),
+        tilesStatic(entry.guess, isPersons() ? entry.fb.states : null), pegsText(entry),
+        entry.cost > 0 ? h("span", { cls: "muted small", text: "coût " + fmt(Math.round(entry.cost)) }) : null));
+    });
+    hs.appendChild(ol);
+    root.appendChild(hs);
+  }
+
+  /* Ce qui reste possible */
+  if (state.cand.length > 0 && !state.won) {
+    var ps = h("section", { cls: "panel" });
+    ps.appendChild(h("h2", { text: "Ce qui reste possible" }));
+    ps.appendChild(h("p", { text: plural(state.cand.length, "combinaison possible", "combinaisons possibles") + " sur " + fmt(state.total) + "." }));
+    if (state.history.length && state.cand.length < state.total) {
+      var sm = summarize(state.codes, state.cand, n, k);
+      var dl = h("dl", { cls: "poss" });
+      var sure = [], absent = [], c, i;
+      for (c = 0; c < k; c++) {
+        if (sm.present[c] === state.cand.length) sure.push(colorOf(c).name);
+        else if (sm.present[c] === 0) absent.push(colorOf(c).name);
+      }
+      if (sure.length) { dl.appendChild(h("dt", { text: "Sûrement demandées par un personnage" })); dl.appendChild(h("dd", { text: sure.join(", ") })); }
+      if (absent.length) { dl.appendChild(h("dt", { text: "Personne n'en a besoin" })); dl.appendChild(h("dd", { text: absent.join(", ") })); }
+      dl.appendChild(h("dt", { text: "Encore possible pour chaque personnage" }));
+      for (i = 0; i < n; i++) {
+        var names = [];
+        for (c = 0; c < k; c++) if (sm.perSlot[i][c]) names.push(colorOf(c).name);
+        dl.appendChild(h("dd", { text: "Personnage " + (i + 1) + " : " + names.join(", ") }));
+      }
+      ps.appendChild(dl);
+    }
+    if (state.cand.length > 1 && state.cand.length <= 15) {
+      var ul = h("ul", { cls: "combos" });
+      for (var t = 0; t < state.cand.length; t++) {
+        ul.appendChild(h("li", { text: codeAt(state.codes, state.cand[t], n).map(function (c2) { return colorOf(c2).name; }).join(" · ") }));
+      }
+      ps.appendChild(h("p", { cls: "muted small", text: "Liste complète :" }));
+      ps.appendChild(ul);
+    }
+    root.appendChild(ps);
+  }
+
+  if (state.focusSlot !== null) {
+    var f = root.querySelector('select[data-i="' + state.focusSlot + '"]');
+    if (f) f.focus();
+    state.focusSlot = null;
+  }
+}
+
+function counter(label, hint, value, min, max, onChange) {
+  var out = h("output", { text: String(value) });
+  var minus = h("button", { cls: "btn", type: "button", "aria-label": label + " : une de moins", text: "−", disabled: value <= min, on: { click: function () { onChange(value - 1); } } });
+  var plus = h("button", { cls: "btn", type: "button", "aria-label": label + " : une de plus", text: "+", disabled: value >= max, on: { click: function () { onChange(value + 1); } } });
+  return h("div", { cls: "fbitem" },
+    h("span", { cls: "label", text: label }),
+    h("div", { cls: "stepper" }, minus, out, plus),
+    h("p", { cls: "hint", text: hint }));
+}
+
+window.__aideDonjon = { state: state, buildAll: buildAll, feedback: feedback, filterCands: filterCands, suggest: suggest, allIndexes: allIndexes, codeAt: codeAt, encodeSlots: encodeSlots, winChance: winChance, summarize: summarize };
+
+newGame();
+})();
+</script>
+<!-- === MODULE DE LECTURE DU TABLEAU DE BORD (NE PAS MODIFIER EN DESSOUS) === -->
+<script>
+function checkGlobalCityData() {
+  try {
+    const rawData = localStorage.getItem('elvenar_shared_dashboard');
+    if(rawData) {
+      const data = JSON.parse(rawData);
+      let banner = document.getElementById('syncBanner');
+      if(!banner) {
+        banner = document.createElement('div');
+        banner.id = 'syncBanner';
+        banner.style.cssText = "background:#0f3460; border:1px solid #3498db; padding:8px; margin:10px auto; border-radius:4px; font-size:11px; color:#8f8; text-align:center; max-width:800px;";
+        document.body.insertBefore(banner, document.body.firstChild);
+      }
+      banner.innerHTML = `📡 <b>Cité connectée :</b> ${data.unlockedSpaces} cases débloquées au total | <b>${data.freeSpaces} espaces libres</b> (Mise à jour à ${data.lastUpdate})`;
+    }
+  } catch(e) {
+    console.log("Erreur lecture synchro :", e);
+  }
+}
+
+// Vérifie les données transmises par le planificateur dès l'ouverture
+window.addEventListener('DOMContentLoaded', checkGlobalCityData);
+setInterval(checkGlobalCityData, 3000);
+</script>
+</body>
+</html>
