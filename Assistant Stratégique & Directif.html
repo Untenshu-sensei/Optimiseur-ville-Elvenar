@@ -210,6 +210,9 @@
         }
         .merveille-card.possedee { border-color: var(--primary); background-color: rgba(69, 138, 87, 0.05); }
         .merveille-card.piege { border-color: var(--danger); background-color: rgba(201, 74, 74, 0.05); }
+        .merveille-card.moyen { border-color: var(--accent); background-color: rgba(229, 177, 93, 0.05); }
+        .badge-choix { background: var(--accent); color: #000; font-weight: bold; font-size: 11px; padding: 2px 7px; border-radius: 10px; margin-right: 6px; white-space: nowrap; }
+        .cat-merveille { font-size: 11px; color: var(--muted); }
 
         .conseil-box {
             background: rgba(0,0,0,0.3);
@@ -357,17 +360,403 @@
 
 <script>
     const DEFAULT_MERVEILLES = [
-        { id: "aiguilles", nom: "Aiguilles de la tempête (Ch. 1)", type: "top", effet: "Unités à distance + Vitesse caserne.", conseil: "🟢 INCONTOURNABLE : Indispensable pour le combat et l'optimisation des tournois." },
-        { id: "phare", nom: "Phare de cristal / Tour des rubis (Ch. 1)", type: "top", effet: "Prolonge la durée des aides et fournit des marchandises.", conseil: "🟢 TRÈS UTILE : Confortable pour le commerce et le voisinage." },
-        { id: "abysse", nom: "Abysse doré (Ch. 2)", type: "top", effet: "Or passif + Population massive.", conseil: "🟢 INCONTOURNABLE : Résout durablement les problèmes de population sans poser de résidences." },
-        { id: "monastere", nom: "Monastère martial / Sanctuaire (Ch. 3)", type: "top", effet: "PV des unités + Culture élevée.", conseil: "🟢 INCONTOURNABLE : Le bouclier vital de vos armées et une excellente source de culture par case." },
-        { id: "sanctuaire_houblon", nom: "Sanctuaire du houblon (Ch. 4)", type: "top", effet: "Production de troupes Légères de Corps à Corps + Marchand.", conseil: "🟢 TRÈS FORT : Excellent boost pour la caserne." },
-        { id: "trone", nom: "Trône des hauts-hommes (Ch. 5)", type: "piege", effet: "Culture et points de classement.", conseil: "🔴 PIÈGE PUR : Coût exorbitant en Restaurations Royales et en PC pour un retour totalement nul." },
-        { id: "tome_mysteres", nom: "Tome des mystères (Ch. 5)", type: "top", effet: "Fournit des reliques et des Points de Connaissance quotidiens.", conseil: "🟢 TRÈS UTILE : Excellent pour sécuriser des reliques et un flux régulier de PC." },
-        { id: "abime_cristallin", nom: "Abîme cristallin (Ch. 6)", type: "top", effet: "Bonus de marchandises de base + Mana/Graines.", conseil: "🟢 TRÈS UTILE : Sécurise la production de marchandises." },
-        { id: "labyrinthe", nom: "Labyrinthe de la matière noire (Ch. 6)", type: "piege", effet: "Production de troupes et Mana.", conseil: "🔴 RAREMENT RENTABLE : Encombrant et peu efficace par rapport au coût." },
-        { id: "tour_prosp", nom: "Tour de la prospérité (Ch. 8)", type: "top", effet: "Réduit la décadence et augmente la production des sorts.", conseil: "🟢 INCONTOURNABLE : Dopage massif de l'efficacité de vos enchantements." }
-    ];
+        {
+                "id": "aiguilles",
+                "nom": "Aiguilles de la tempête",
+                "cat": "Merveilles de la tempête",
+                "prio": 1,
+                "type": "top",
+                "effet": "Unités à distance + Vitesse caserne. (Taille 3x5)",
+                "conseil": "🟢 INCONTOURNABLE : Indispensable pour le combat et l'optimisation des tournois."
+        },
+        {
+                "id": "phare",
+                "nom": "Phare de cristal / Tour des rubis",
+                "cat": "Merveilles des elfes / humains",
+                "prio": 1.2,
+                "type": "top",
+                "effet": "Prolonge la durée des aides et fournit des marchandises.",
+                "conseil": "🟢 TRÈS UTILE : Confortable pour le commerce et le voisinage."
+        },
+        {
+                "id": "abysse",
+                "nom": "Abysse doré",
+                "cat": "Merveilles secrètes",
+                "prio": 2,
+                "type": "top",
+                "effet": "Or passif + Population massive.",
+                "conseil": "🟢 INCONTOURNABLE : Résout durablement les problèmes de population sans poser de résidences."
+        },
+        {
+                "id": "monastere",
+                "nom": "Monastère martial / Sanctuaire",
+                "cat": "Merveilles des elfes / humains",
+                "prio": 3,
+                "type": "top",
+                "effet": "PV des unités + Culture élevée.",
+                "conseil": "🟢 INCONTOURNABLE : Le bouclier vital de vos armées et une excellente source de culture par case."
+        },
+        {
+                "id": "sanctuaire_houblon",
+                "nom": "Sanctuaire du houblon",
+                "cat": "Catégorie à confirmer",
+                "prio": 4,
+                "type": "top",
+                "effet": "Production de troupes Légères de Corps à Corps + Marchand.",
+                "conseil": "🟢 TRÈS FORT : Excellent boost pour la caserne."
+        },
+        {
+                "id": "trone",
+                "nom": "Trône des hauts-hommes",
+                "cat": "Merveilles oubliées",
+                "prio": 5,
+                "type": "piege",
+                "effet": "Points de classement supplémentaires pour chaque merveille construite ou améliorée + culture supplémentaire égale aux points de classement bonus.",
+                "conseil": "🔴 PIÈGE PUR : Coût exorbitant en Restaurations Royales et en PC pour un retour totalement nul."
+        },
+        {
+                "id": "tome_mysteres",
+                "nom": "Tome des mystères",
+                "cat": "Catégorie à confirmer",
+                "prio": 5.2,
+                "type": "top",
+                "effet": "Fournit des reliques et des Points de Connaissance quotidiens.",
+                "conseil": "🟢 TRÈS UTILE : Excellent pour sécuriser des reliques et un flux régulier de PC."
+        },
+        {
+                "id": "abime_cristallin",
+                "nom": "Abîme cristallin",
+                "cat": "Catégorie à confirmer",
+                "prio": 6,
+                "type": "top",
+                "effet": "Bonus de marchandises de base + Mana/Graines.",
+                "conseil": "🟢 TRÈS UTILE : Sécurise la production de marchandises."
+        },
+        {
+                "id": "labyrinthe",
+                "nom": "Labyrinthe de la matière noire",
+                "cat": "Merveilles des sorciers et dragons",
+                "prio": 6.2,
+                "type": "piege",
+                "effet": "Production de troupes et Mana. (Taille 5x6)",
+                "conseil": "🔴 RAREMENT RENTABLE : Encombrant et peu efficace par rapport au coût."
+        },
+        {
+                "id": "tour_prosp",
+                "nom": "Tours de la prospérité",
+                "cat": "Merveilles des fées",
+                "prio": 8,
+                "type": "top",
+                "effet": "Réduit la décadence et augmente la production des sorts.",
+                "conseil": "🟢 INCONTOURNABLE : Dopage massif de l'efficacité de vos enchantements."
+        },
+        {
+                "id": "fontaine_jouvence",
+                "nom": "Fontaine de jouvence thermale",
+                "cat": "Merveilles des Elvenar",
+                "prio": 1.8,
+                "type": "top",
+                "effet": "Augmente la population fournie par les résidences + culture supplémentaire selon les niveaux de vos merveilles. (Taille 7x3)",
+                "conseil": "🟢 INCONTOURNABLE : Population et culture sans poser de bâtiment de plus. Bon rapport à la case."
+        },
+        {
+                "id": "vortex_stockage",
+                "nom": "Vortex de stockage",
+                "cat": "Merveilles des Elvenar",
+                "prio": 2.2,
+                "type": "top",
+                "effet": "Augmente la capacité de stockage des marchandises du campement + production de vos trois marchandises sensibles boostées. (Taille 3x6)",
+                "conseil": "🟢 TRÈS UTILE : Stockage plus grand et marchandises sensibles en plus."
+        },
+        {
+                "id": "coeur_montagne",
+                "nom": "Cœur de la montagne",
+                "cat": "Merveilles des nains",
+                "prio": 2.5,
+                "type": "top",
+                "effet": "Augmente la production des manufactures boostées + population supplémentaire. (Taille 3x8)",
+                "conseil": "🟢 TRÈS UTILE : Production et population en même temps."
+        },
+        {
+                "id": "rempart_nain",
+                "nom": "Rempart nain",
+                "cat": "Merveilles des nains",
+                "prio": 4.9,
+                "type": "top",
+                "effet": "Produit des unités du premier type toutes les 3 h + augmente la taille des escouades entraînables dans la caserne.",
+                "conseil": "🟢 TRÈS UTILE : Armée plus nombreuse à chaque escouade, plus des unités gratuites toutes les 3 h."
+        },
+        {
+                "id": "distorsion_temporelle",
+                "nom": "Distorsion temporelle (D111-a)",
+                "cat": "Merveilles des Créateurs",
+                "prio": 3.2,
+                "type": "top",
+                "effet": "Augmente les bonus de marchandises sensibles + réduit le temps d'attente entre les provinces de tournoi. (Taille 3x6)",
+                "conseil": "🟢 TRÈS UTILE : Marchandises sensibles et tournois plus rapides."
+        },
+        {
+                "id": "tour_guet",
+                "nom": "Tour de guet en ruines",
+                "cat": "Merveilles oubliées",
+                "prio": 3.5,
+                "type": "top",
+                "effet": "Améliore le bonus de culture d'un bâtiment qui a reçu l'aide d'un voisin ou d'un confrère + culture supplémentaire (% de la culture requise de la cité).",
+                "conseil": "🟢 TRÈS UTILE : Culture en plus sans bâtiment culturel."
+        },
+        {
+                "id": "simia_sapiens",
+                "nom": "Simia Sapiens (D222-z)",
+                "cat": "Merveilles des Créateurs",
+                "prio": 3.8,
+                "type": "top",
+                "effet": "Réduit la perte journalière de marchandises sensibles + unités en plus à chaque récolte de la caserne, du terrain d'entraînement et du camp des mercenaires. (Taille 6x5)",
+                "conseil": "🟢 TRÈS UTILE : Économise vos marchandises sensibles et gonfle l'armée."
+        },
+        {
+                "id": "phare_entourage",
+                "nom": "Phare de bon entourage",
+                "cat": "Merveilles des Amuni",
+                "prio": 4.2,
+                "type": "top",
+                "effet": "Prolonge et renforce le sort « Don ensorcelé » + augmente la production des ressources des bâtiments culturels tant que le sort est actif. (Taille 5x6)",
+                "conseil": "🟢 TRÈS UTILE : Intéressant si vous utilisez beaucoup vos bâtiments culturels."
+        },
+        {
+                "id": "centre_echange",
+                "nom": "Centre d'échange d'Elvenar",
+                "cat": "Merveilles des Halfelins",
+                "prio": 4.5,
+                "type": "top",
+                "effet": "Produit des graines divines toutes les 12 h + prolonge et renforce le sort « Manufacture enchantée ».",
+                "conseil": "🟢 UTILE : Bon complément si vous utilisez la Manufacture enchantée."
+        },
+        {
+                "id": "ecole_sorcellerie",
+                "nom": "École de sorcellerie vallorienne",
+                "cat": "Merveilles de la Légende Vallorienne",
+                "prio": 4.8,
+                "type": "top",
+                "effet": "Produit des gardes valloriens toutes les 3 h + réduit le coût des ingrédients du chaudron + réduit le temps de production de l'académie de magie.",
+                "conseil": "🟢 UTILE : Fait économiser dans le chaudron et à l'académie de magie."
+        },
+        {
+                "id": "arche_draconique",
+                "nom": "Arche draconique",
+                "cat": "Merveilles des Marchands d'Unur",
+                "prio": 5.8,
+                "type": "top",
+                "effet": "Marchandises sensibles précieuses boostées pour chaque quête d'histoire complétée + catalyseur(s) de combinaison pour chaque coffre mystique ouvert dans l'Artisanat.",
+                "conseil": "🟢 UTILE : Source régulière de marchandises sensibles et de catalyseurs."
+        },
+        {
+                "id": "oracle_destin",
+                "nom": "Oracle du destin",
+                "cat": "Merveilles des Marchands d'Unur",
+                "prio": 4.0,
+                "type": "top",
+                "effet": "Un de vos boosts de marchandises sensibles (au hasard) à chaque recette d'Artisanat récoltée + produit des sorts de Restauration royale chaque semaine.",
+                "conseil": "🟢 TRÈS UTILE : Les Restaurations royales sont exigées tous les 5 niveaux d'une merveille, donc elles accélèrent toutes vos améliorations."
+        },
+        {
+                "id": "excavation",
+                "nom": "Excavation sans fin",
+                "cat": "Merveilles de la tempête",
+                "prio": 5.5,
+                "type": "top",
+                "effet": "Matériaux en plus toutes les 24 h (% de la capacité de stockage de l'HdV) + reliques en plus par objet mystique.",
+                "conseil": "🟢 UTILE : Matériaux réguliers et reliques en plus."
+        },
+        {
+                "id": "forge_heros",
+                "nom": "Forge des héros",
+                "cat": "Merveilles des orcs et gobelins",
+                "prio": 6.5,
+                "type": "moyen",
+                "effet": "Donne des orcs toutes les 24 h (selon vos provinces terminées) + améliore la force des unités de mêlée lourde. (Taille 5x5)",
+                "conseil": "🟡 SELON VOTRE JEU : Rentable si votre armée repose sur la mêlée lourde."
+        },
+        {
+                "id": "pyramide",
+                "nom": "Pyramide purificatrice",
+                "cat": "Merveilles des Amuni",
+                "prio": 6.6,
+                "type": "moyen",
+                "effet": "Produit des unités de mêlée lourde toutes les 3 h + marchandises sensibles boostées quand vous récoltez des orcs. (Taille 4x6)",
+                "conseil": "🟡 SELON VOTRE JEU : Armée de mêlée lourde et marchandises sensibles en bonus."
+        },
+        {
+                "id": "champignons",
+                "nom": "Sanctuaire des champignons rusés",
+                "cat": "Merveilles des orcs et gobelins",
+                "prio": 6.8,
+                "type": "moyen",
+                "effet": "Produit des unités du 2e type toutes les 3 h + augmente la taille des escouades par armurerie. (Taille 5x4)",
+                "conseil": "🟡 SELON VOTRE JEU : Utile pour renforcer l'armée."
+        },
+        {
+                "id": "guilde_marchand",
+                "nom": "Guilde du marchand prospère",
+                "cat": "Merveilles des fées",
+                "prio": 7,
+                "type": "moyen",
+                "effet": "Réduit la commission du marchand + améliore l'offre du grossiste + booste la production des portails des races invitées.",
+                "conseil": "🟡 SELON VOTRE JEU : Intéressant si vous faites beaucoup de commerce."
+        },
+        {
+                "id": "academie_volante",
+                "nom": "Académie volante",
+                "cat": "Merveilles des elfes des bois",
+                "prio": 7.2,
+                "type": "moyen",
+                "effet": "Produit des unités de mages toutes les 3 h + accélère l'entraînement du camp des mercenaires. (Taille 4x4)",
+                "conseil": "🟡 SELON VOTRE JEU : Utile si vos armées sont à base de mages."
+        },
+        {
+                "id": "temple_crapauds",
+                "nom": "Temple des crapauds",
+                "cat": "Merveilles des Halfelins",
+                "prio": 7.6,
+                "type": "moyen",
+                "effet": "Produit des unités de portée lourde toutes les 3 h + augmente leur force. (Taille 6x3)",
+                "conseil": "🟡 SELON VOTRE JEU : Utile si vous jouez la portée lourde."
+        },
+        {
+                "id": "abbaye_dragon",
+                "nom": "Abbaye du dragon",
+                "cat": "Merveilles des sorciers et dragons",
+                "prio": 7.8,
+                "type": "moyen",
+                "effet": "Augmente la force des unités de mages + vous donne du mana à chaque sort utilisé.",
+                "conseil": "🟡 SELON VOTRE JEU : Utile si vous lancez beaucoup de sorts."
+        },
+        {
+                "id": "fontaines_triomphantes",
+                "nom": "Fontaines triomphantes",
+                "cat": "Merveilles des Élémentaires",
+                "prio": 8.2,
+                "type": "moyen",
+                "effet": "Augmente la vitesse d'entraînement des terrains d'entraînement + dégâts des unités de mêlée légère. (Taille 6x4)",
+                "conseil": "🟡 SELON VOTRE JEU : Utile pour une armée de mêlée légère."
+        },
+        {
+                "id": "boutique_pre",
+                "nom": "Boutique d'antiquités de madame Le Pré",
+                "cat": "Merveilles de la Légende Vallorienne",
+                "prio": 8.4,
+                "type": "moyen",
+                "effet": "Produit des graines divines toutes les 3 h + ressources d'ascension boostées à chaque récolte de travail communautaire.",
+                "conseil": "🟡 SELON VOTRE JEU : Intéressant si vous utilisez les graines divines."
+        },
+        {
+                "id": "tours_crepuscule",
+                "nom": "Tours du crépuscule",
+                "cat": "Merveilles des Élémentaires",
+                "prio": 8.5,
+                "type": "moyen",
+                "effet": "Graines divines à chaque coffre d'aide entre voisins + réduit la perte de graines pendant la nuit. (Taille 7x3)",
+                "conseil": "🟡 SELON VOTRE JEU : Utile pour conserver vos graines divines."
+        },
+        {
+                "id": "ambassade_enar",
+                "nom": "Ambassade d'Enar",
+                "cat": "Merveilles des elfes des bois",
+                "prio": 7.5,
+                "type": "moyen",
+                "effet": "Produit lentement des éclats de rune pour les merveilles + du mana à chaque exploration ou fin de tournoi. (Taille 4x7)",
+                "conseil": "🟡 UTILE : Les éclats de rune accélèrent la construction de vos autres merveilles."
+        },
+        {
+                "id": "bibliotheque_donjon",
+                "nom": "Bibliothèque du Donjon",
+                "cat": "Merveilles des Ambassades",
+                "prio": 8.8,
+                "type": "moyen",
+                "effet": "Points de classement par cristal du Donjon de l'Éternité + points de connaissance toutes les 24 h. (Taille 4x6)",
+                "conseil": "🟡 SELON VOTRE JEU : Utile si vous visez le classement et le Donjon."
+        },
+        {
+                "id": "autel_champions",
+                "nom": "Autel des champions",
+                "cat": "Merveilles de l'Esprit d'Équipe",
+                "prio": 9.2,
+                "type": "moyen",
+                "effet": "Produit des guerriers orcs toutes les 3 h + orcs pour chaque point de tournoi obtenu.",
+                "conseil": "🟡 SELON VOTRE JEU : Utile si vous jouez beaucoup les tournois."
+        },
+        {
+                "id": "repos_ancestral",
+                "nom": "Lieu de repos ancestral",
+                "cat": "Merveilles du Pouvoir de la Musique",
+                "prio": 9.3,
+                "type": "moyen",
+                "effet": "Réduit la perte des marchandises ascendantes + produit des banshees toutes les 3 h.",
+                "conseil": "🟡 SELON VOTRE JEU : Utile si vous utilisez les marchandises ascendantes."
+        },
+        {
+                "id": "autel_eternite",
+                "nom": "Autel de l'éternité",
+                "cat": "Merveilles des Ports des profondeurs",
+                "prio": 9.4,
+                "type": "moyen",
+                "effet": "Produit des stratèges orcs toutes les 3 h + graines divines par coffre de Donjon ouvert.",
+                "conseil": "🟡 SELON VOTRE JEU : Utile si vous ouvrez beaucoup de coffres de Donjon."
+        },
+        {
+                "id": "parcage_fans",
+                "nom": "Parcage des fans du Tournoi",
+                "cat": "Merveilles des Ports des profondeurs",
+                "prio": 9.45,
+                "type": "moyen",
+                "effet": "Graines divines par point de tournoi (selon la culture utilisée) + réduit la perte de travail communautaire.",
+                "conseil": "🟡 SELON VOTRE JEU : Utile si vous jouez beaucoup les tournois et le travail communautaire."
+        },
+        {
+                "id": "arene_tournoi",
+                "nom": "Arène de tournoi",
+                "cat": "Merveilles des Ambassades",
+                "prio": 9.5,
+                "type": "moyen",
+                "effet": "Points de classement par coffre de tournoi terminé + chevaucheurs ailés venimeux toutes les 3 h.",
+                "conseil": "🟡 SELON VOTRE JEU : Plutôt pour le classement et les tournois."
+        },
+        {
+                "id": "temple_esprits",
+                "nom": "Temple des Esprits",
+                "cat": "Merveilles de l'Esprit d'Équipe",
+                "prio": 9.6,
+                "type": "moyen",
+                "effet": "Unurium à chaque coffre de Donjon et à chaque collecte de monnaie d'évènement. (Taille 7x4)",
+                "conseil": "🟡 SELON VOTRE JEU : Utile seulement si vous cherchez de l'Unurium."
+        },
+        {
+                "id": "tour_sceau",
+                "nom": "Tour du sceau Vallorien",
+                "cat": "Merveilles de la Revanche de l'Exilé",
+                "prio": 9.7,
+                "type": "moyen",
+                "effet": "Donne de l'Unurium à chaque récolte de pièces des résidences + réduit la perte journalière d'Unurium. (Taille 5x6)",
+                "conseil": "🟡 SELON VOTRE JEU : Utile seulement si vous cherchez de l'Unurium."
+        },
+        {
+                "id": "arbre_illumination",
+                "nom": "Arbre d'illumination",
+                "cat": "Merveilles de la Revanche de l'Exilé",
+                "prio": 9.1,
+                "type": "moyen",
+                "effet": "Produit des unités « Ranges » toutes les 3 h (% de la taille de vos escouades) + augmente le boost de production des marchandises d'ascension.",
+                "conseil": "🟡 SELON VOTRE JEU : Utile si vous produisez des marchandises d'ascension."
+        },
+        {
+                "id": "taverne_explorateurs",
+                "nom": "Taverne des explorateurs",
+                "cat": "Merveilles du Pouvoir de la Musique",
+                "prio": 6.4,
+                "type": "top",
+                "effet": "Réduit le temps d'exploration + augmente le nombre de coffres de l'aide des voisins.",
+                "conseil": "🟢 UTILE : Exploration plus rapide et davantage de coffres d'aide entre voisins."
+        }
+];
 
     const DETAILS_RACE_SUIVANTE = {
         6: {
@@ -968,7 +1357,7 @@
         const searchInput = document.createElement("input");
         searchInput.type = "text";
         searchInput.id = "merveilleSearchInput";
-        searchInput.placeholder = "🔍 Chercher une Merveille (ex: Aiguilles, Phare...)";
+        searchInput.placeholder = "🔍 Chercher une Merveille ou une catégorie (ex: Aiguilles, nains, Amuni...)";
         searchInput.style.width = "100%";
 
         const suggestionsBox = document.createElement("div");
@@ -985,7 +1374,7 @@
                 return;
             }
 
-            const matches = merveillesRef.filter(m => !d.possession[m.id] && m.nom.toLowerCase().includes(query));
+            const matches = merveillesRef.filter(m => !d.possession[m.id] && (m.nom + ' ' + (m.cat || '')).toLowerCase().includes(query)).sort((a, b) => (a.prio || 99) - (b.prio || 99));
 
             if(matches.length === 0) {
                 const div = document.createElement("div");
@@ -999,7 +1388,7 @@
                     div.className = "suggestion-item";
                     
                     const spanName = document.createElement("span");
-                    spanName.textContent = m.nom + (m.type === 'piege' ? ' (⚠️ Piège)' : '');
+                    spanName.textContent = m.nom + (m.cat ? ' — ' + m.cat : '') + (m.type === 'piege' ? ' (⚠️ Piège)' : '');
 
                     const btnInfo = document.createElement("button");
                     btnInfo.className = "secondary";
@@ -1067,13 +1456,18 @@
                 Renseigne les informations ci-dessous pour enregistrer définitivement ta merveille dans l'outil et éviter les oublis dus aux wikis non mis à jour par Inno :
             </p>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:13px; margin-bottom:10px;">
-                <label>Nom de la Merveille & Chapitre :<br><input type="text" id="customNom" placeholder="ex: Monolithe antique (Ch. 17)" style="width:100%; margin-top:4px;"></label>
+                <label>Nom de la Merveille :<br><input type="text" id="customNom" placeholder="ex: Monolithe antique" style="width:100%; margin-top:4px;"></label>
                 <label>Type / Évaluation :<br>
                     <select id="customType" style="width:100%; margin-top:4px;">
                         <option value="top">🟢 Utile / Rentable</option>
+                        <option value="moyen">🟡 Selon votre jeu</option>
                         <option value="piege">🔴 Piège / Non rentable</option>
                     </select>
                 </label>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:13px; margin-bottom:10px;">
+                <label>Catégorie (ex: Licornes) :<br><input type="text" id="customCat" placeholder="ex: Merveilles des Licornes" style="width:100%; margin-top:4px;"></label>
+                <label>Priorité (1 = à améliorer en premier) :<br><input type="number" id="customPrio" value="9" min="0" max="20" step="0.1" style="width:100%; margin-top:4px;"></label>
             </div>
             <div style="font-size:13px; margin-bottom:10px;">
                 <label>Effet Principal :<br><input type="text" id="customEffet" placeholder="ex: Production de Mana + Boost d'unités légères" style="width:100%; margin-top:4px;"></label>
@@ -1091,15 +1485,15 @@
         const grid = document.createElement("div");
         grid.className = "merveilles-grid";
 
-        merveillesRef.filter(m => d.possession[m.id]).forEach(m => {
+        merveillesRef.filter(m => d.possession[m.id]).sort((a, b) => (a.prio || 99) - (b.prio || 99)).forEach((m, rang) => {
             const box = document.createElement("div");
-            box.className = `merveille-card possedee ${m.type === 'piege' ? 'piege' : ''}`;
+            box.className = `merveille-card possedee ${m.type === 'piege' ? 'piege' : (m.type === 'moyen' ? 'moyen' : '')}`;
             
             const nivActuel = d.niveauxMerveilles[m.id] || 1;
 
             box.innerHTML = `
                 <div class="merveille-header" style="display:flex; justify-content:space-between; align-items:center;">
-                    <b>${m.nom}</b>
+                    <span><span class="badge-choix" title="Classement des merveilles posées dans votre cité : Choix 1 = à améliorer en premier.">Choix ${rang + 1}</span><b>${m.nom}</b><br><span class="cat-merveille">${m.cat || ''}</span></span>
                     <button class="secondary" style="padding:2px 6px; font-size:10px;" onclick="retirerMerveille('${m.id}')">🗑️ Retirer</button>
                 </div>
                 <div style="font-size: 12px; display: flex; align-items: center; gap: 8px;">
@@ -1121,6 +1515,8 @@
         const type = document.getElementById("customType").value;
         const effet = document.getElementById("customEffet").value.trim();
         const conseil = document.getElementById("customConseil").value.trim();
+        const cat = document.getElementById("customCat").value.trim();
+        const prio = parseFloat(document.getElementById("customPrio").value);
 
         if(!nom) {
             alert("❌ Veuillez renseigner au moins le nom de la Merveille.");
@@ -1132,6 +1528,8 @@
             id: idM,
             nom: nom,
             type: type,
+            cat: cat,
+            prio: isNaN(prio) ? 9 : prio,
             effet: effet || "Effet personnalisé",
             conseil: conseil || (type === 'piege' ? "🔴 PIÈGE : Enregistré par vos soins." : "🟢 UTILE : Enregistré par vos soins.")
         };
@@ -1160,7 +1558,7 @@
                 <button class="secondary" style="padding: 2px 8px; font-size: 11px;" onclick="hidePreviewMerveille()">✖ Masquer</button>
             </div>
             <div style="font-size: 13px; line-height: 1.5;">
-                <b>Effet :</b> ${m.effet}<br><br>
+                <b>Catégorie :</b> ${m.cat || 'non précisée'}<br><b>Effet :</b> ${m.effet}<br><br>
                 <div class="conseil-box ${isPiege ? 'alerte' : ''}">
                     <b>💡 Diagnostic du Coach :</b><br>${m.conseil}
                 </div>
