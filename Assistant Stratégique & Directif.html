@@ -399,11 +399,11 @@
         {
                 "id": "sanctuaire_houblon",
                 "nom": "Sanctuaire du houblon",
-                "cat": "Catégorie à confirmer",
-                "prio": 4,
-                "type": "top",
-                "effet": "Production de troupes Légères de Corps à Corps + Marchand.",
-                "conseil": "🟢 TRÈS FORT : Excellent boost pour la caserne."
+                "cat": "Introuvable dans le jeu",
+                "prio": 12,
+                "type": "moyen",
+                "effet": "Production de troupes Légères de Corps à Corps + Marchand (description d'origine, non confirmée).",
+                "conseil": "⚠️ NON CONFIRMÉE : Introuvable dans le jeu. Ressemble au Rempart nain. Si tu ne la possèdes pas, clique sur « 🗑️ Retirer »."
         },
         {
                 "id": "trone",
@@ -417,20 +417,20 @@
         {
                 "id": "tome_mysteres",
                 "nom": "Tome des mystères",
-                "cat": "Catégorie à confirmer",
+                "cat": "Merveilles secrètes",
                 "prio": 5.2,
                 "type": "top",
-                "effet": "Fournit des reliques et des Points de Connaissance quotidiens.",
-                "conseil": "🟢 TRÈS UTILE : Excellent pour sécuriser des reliques et un flux régulier de PC."
+                "effet": "Produit des points de connaissance toutes les 24 h + donne des matériaux à chaque exploration lancée (% de la capacité de stockage de matériaux de l'HdV).",
+                "conseil": "🟢 UTILE : Points de connaissance réguliers et matériaux à chaque exploration."
         },
         {
                 "id": "abime_cristallin",
                 "nom": "Abîme cristallin",
-                "cat": "Catégorie à confirmer",
-                "prio": 6,
-                "type": "top",
-                "effet": "Bonus de marchandises de base + Mana/Graines.",
-                "conseil": "🟢 TRÈS UTILE : Sécurise la production de marchandises."
+                "cat": "Introuvable dans le jeu",
+                "prio": 12.1,
+                "type": "moyen",
+                "effet": "Bonus de marchandises de base + Mana/Graines (description d'origine, non confirmée).",
+                "conseil": "⚠️ NON CONFIRMÉE : Introuvable dans le jeu. Si tu ne la possèdes pas, clique sur « 🗑️ Retirer »."
         },
         {
                 "id": "labyrinthe",
@@ -781,7 +781,7 @@
             portailReq: "Niveau 4 (Capacité 27 000 Granit / 1 120 Cuivre)",
             regles: [
                 "Les Fermes de Jour (5x4) produisent l'Engrais et le Miel pour faire tourner les Fermes de Nuit (2x7).",
-                "Ne raserez les Mines de Granit qu'une fois la dernière technologie Naine validée."
+                "Ne raserez les Mines de Granit et le Portail des Nains qu'une fois la dernière technologie Naine validée (ou téléportez le Portail/bâtiments spéciaux dans votre inventaire via le Donjon pour les réutiliser ou garder de l'espace, règle valable pour toutes les races invitées des chapitres suivants)."
             ]
         }
     };
@@ -1120,7 +1120,7 @@
 
             setTimeout(updateCalculs, 50);
         } else {
-            container.innerHTML += `<div class="action-box"><b>💡 Conseil du Coach (Chapitre ${d.chapitre}) :</b><br>Gestion active du campement de l'ère en cours. Pensez à anticiper la production des ressources invitées avant de valider la dernière recherche technologique.</div>`;
+            container.innerHTML += `<div class="action-box"><b>💡 Conseil du Coach (Chapitre ${d.chapitre}) :</b><br>Gestion active du campement de l'ère en cours. Pensez à anticiper la production des ressources invitées avant de valider la dernière recherche technologique (et pensez à téléporter ou conserver vos portails/bâtiments spéciaux pour les réutiliser plus tard).</div>`;
         }
 
         return container;
@@ -1170,7 +1170,7 @@
                 • <b>Emprise totale suggérée :</b> <span style="color:var(--accent); font-weight:bold;">${infoSuivante.surfaceTotale}</span><br>
                 • <b>Gabarits des bâtiments invités à anticiper :</b>
                 <ul style="margin:4px 0 8px 20px; padding:0;">${htmlBatiments}</ul>
-                💡 <b>Astuce du Coach :</b> ${infoSuivante.astuce}
+                💡 <b>Astuce du Coach :</b> ${infoSuivante.astuce} (N'oubliez pas de téléporter dans votre inventaire le portail et les bâtiments spéciaux de l'ère plutôt que de les vendre, ils restent utiles pour la suite ou pour économiser l'espace).
             </div>
         `;
 
