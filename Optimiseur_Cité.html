@@ -76,6 +76,7 @@ body{overflow:hidden;touch-action:none;font-family:sans-serif}
 <button id="btnAddExtension" style="background:#16a085;">🧱 + Extension (5×5)</button>
 <button id="btnStoreAll" style="background:#e67e22;">📦 Tout ranger en réserve</button>
 <button id="btnOptimize">⚡ Optimiser</button>
+<label id="lblReserve" title="L'optimiseur garde un carré libre pour poser plus tard le portail de la prochaine race et ses premières mines." style="font-size:12px;color:#ddd;white-space:nowrap"><input type="checkbox" id="optReserve"> Garder une place pour le prochain portail <input type="number" id="optReserveSize" value="8" min="4" max="16" style="width:42px"> × <span id="optReserveSize2">8</span></label>
 <button id="btnOriginal">🏠 Origine</button>
 <select id="selMode"><option value="move">✋ Déplacer</option><option value="road">🛣️ Tracer des rues</option><option value="erase">🧽 Effacer des rues</option><option value="chemin" id="optChemin" disabled>🛤️ Chemin d'ensemble (pose d'abord un Portail/règlement)</option></select>
 <select id="selChemin" style="display:none" title="Quel chemin d'ensemble poser"></select>
@@ -109,13 +110,15 @@ body{overflow:hidden;touch-action:none;font-family:sans-serif}
 <option value="">Choisir une catégorie</option>
 <option value="Atelier">Atelier</option>
 <option value="Basique">Basique</option>
-<option value="Culture">Culture</option>
 <option value="Donjon">Donjon (Hors-carte / Fixe)</option>
 <option value="Evénement">Evénement</option>
 <option value="Marchandises">Marchandises</option>
 <option value="Merveille Antique">Merveille Antique</option>
 <option value="Militaire">Militaire</option>
-<option value="Portail/règlement">Portail/règlement</option>
+<option value="Portail/règlement">Portail / Principal (seul relié à une rue commune)</option>
+<option value="Portail / Marchandises">Portail / Marchandises (relié par rails)</option>
+<option value="Culture (/Résidentiel)">Culture (/Résidentiel) — a besoin d'une rue</option>
+<option value="Culture (/Résidentiel) Autonome">Culture (/Résidentiel) Autonome — sans rue</option>
 <option value="Résidence">Résidence</option>
 <option value="Rue">Rue / Route</option>
 <option value="Chemin d'ensemble">Chemin d'ensemble</option>
@@ -219,19 +222,30 @@ document.getElementById('btnCloseNotice').onclick=()=>{
 };
 
 const typeColors={
- 'Atelier':'#d9a36f','Basique':'#a99a8c','Culture':'#83b8ad','Donjon':'#8293a2','Evénement':'#d8c17a',
- 'Marchandises':'#83b58c','Merveille Antique':'#a88bb9','Militaire':'#c98787','Portail/règlement':'#8eaab8',
- 'Résidence':'#83a9cc','Rue':'#a0a5a8','Chemin d\'ensemble':'#d0d98a',
- residential:'#83a9cc',production:'#d9a36f',goods:'#83b58c',culture:'#83b8ad',street:'#a0a5a8',
- main_building:'#a99a8c',military:'#c98787',armory:'#c98787',portal:'#8eaab8',ancient_wonder:'#a88bb9'
+ 'Atelier':'#f5a742','Basique':'#8d6e63','Culture':'#3fc8a8','Donjon':'#3f4e5f','Evénement':'#e0d060',
+ 'Marchandises':'#7bbf5a','Merveille Antique':'#8a63d2','Militaire':'#b83a3a','Portail/règlement':'#00e5ff','Portail / Marchandises':'#ff9100',
+ 'Culture (/Résidentiel)':'#f08fc0','Culture (/Résidentiel) Autonome':'#3fc8a8',
+ 'Résidence':'#4f86d9','Rue':'#c4c8cc','Chemin d\'ensemble':'#ffee00',
+ residential:'#4f86d9',production:'#f5a742',goods:'#7bbf5a',culture:'#3fc8a8',street:'#c4c8cc',
+ main_building:'#8d6e63',military:'#b83a3a',armory:'#b83a3a',portal:'#00e5ff',ancient_wonder:'#8a63d2'
 };
+// couleurs fluo : tout ce qui concerne l'ensemble du portail
+const FLUO_RAILS='#ffee00',FLUO_PORTAIL='#00e5ff',FLUO_MINE='#39ff14',FLUO_FONDERIE='#ff1744',FLUO_AUTRE='#ff9100';
+function isFluoFamily(f){return f==="Chemin d'ensemble"||f==='Portail/règlement'||f==='Portail / Marchandises'}
 
 function colorForBuilding(b){
  const id=String(b.entityId||b.defId||'').toLowerCase();
  if(b.type==='guardian' || id.includes('guardian')) return '#e2e5e6';
  const cfg=(typeof types!=='undefined' && types[b.entityId]) ? types[b.entityId] : null;
  const chosenFamily=(cfg&&cfg.family)||b.family||'';
- if(chosenFamily === "Chemin d'ensemble") return '#d0d98a';
+ if(chosenFamily === "Chemin d'ensemble") return FLUO_RAILS;
+ if(chosenFamily === 'Portail/règlement') return FLUO_PORTAIL;
+ if(chosenFamily === 'Portail / Marchandises'){
+  const nm=String((cfg&&cfg.name)||b.name||'').toLowerCase();
+  if(/fonderie|cuivre/.test(nm)) return FLUO_FONDERIE;
+  if(/mine|granit/.test(nm)) return FLUO_MINE;
+  return FLUO_AUTRE;
+ }
  const level = Number(b.level || (cfg && cfg.level) || 1);
  let baseColor = '#7f8c8d';
  if(chosenFamily && typeColors[chosenFamily]) baseColor = typeColors[chosenFamily];
@@ -305,6 +319,19 @@ function findAreas(d,depth){
 }
 
 /* ---------- SAUVEGARDE ---------- */
+function compactSource(d){
+ try{
+  const ents=findEntities(d)||[];
+  if(!ents.length)return d;
+  const keep=['id','cityentity_id','defId','entityId','entity_id','x','y','position','type','level','current_level','stage','upgrade_level','lvl','width','height','w','h'];
+  const out=ents.map(e=>{const o={};for(const k of keep){if(e&&e[k]!==undefined)o[k]=e[k]}return o});
+  const res={city_map:{entities:out}};
+  const ar=findAreas(d);if(ar)res.city_map.unlocked_areas=ar;
+  const back=findEntities(res)||[];
+  if(back.length!==ents.length)return d;
+  return res;
+ }catch(e){return d}
+}
 function buildPlanSnapshot(){
  const removed=Object.keys(originalPositions).filter(id=>!buildings.some(b=>String(b.id)===id));
  const configs={};
@@ -312,7 +339,7 @@ function buildPlanSnapshot(){
  const addedTypes={};
  const addedKeys=new Set(buildings.filter(b=>b.added).map(b=>b.entityId));
  for(const k in types){if((addedKeys.has(k)||types[k].type==='custom')&&!addedTypes[k]){const t=types[k];addedTypes[k]={key:t.key,name:t.name,type:t.type,level:t.level,w:t.w,h:t.h,nextW:t.nextW,nextH:t.nextH,needsRoad:t.needsRoad,temp:t.temp,duration:t.duration,startDate:t.startDate,family:t.family,locked:t.locked,configured:true}}}
- return {_plan:true,_savedAt:new Date().toISOString(),source:originalData,configs,removed:removed,positions:buildings.map(b=>({id:b.id,x:b.x,y:b.y,level:b.level,temp:b.temp,duration:b.duration,startDate:b.startDate})),added:buildings.filter(b=>b.added),addedTypes:addedTypes,unlockedAreas:unlockedAreas,generatedRoads:[...generatedRoads],view:{scale,offsetX,offsetY}};
+ return {_plan:true,_savedAt:new Date().toISOString(),source:compactSource(originalData),configs,removed:removed,positions:buildings.map(b=>({id:b.id,x:b.x,y:b.y,level:b.level,temp:b.temp,duration:b.duration,startDate:b.startDate})),added:buildings.filter(b=>b.added),addedTypes:addedTypes,unlockedAreas:unlockedAreas,generatedRoads:[...generatedRoads],view:{scale,offsetX,offsetY}};
 }
 
 const TYPES_KEY='elvenar_planner_types_v1.3';
@@ -329,11 +356,30 @@ function applyTypeMemory(){
   for(const b of buildings){if(b.entityId===k){b.w=v.w;b.h=v.h;b.nextW=v.nextW;b.nextH=v.nextH;b.name=v.name;b.family=v.family||'';b.needsRoad=v.needsRoad;b.temp=v.temp;b.duration=v.duration;b.startDate=v.startDate||'';b.locked=v.locked||false;b.level=t.level;b.color=colorForBuilding(b)}}}
 }
 
+let saveWarned=false;
+function showSaveBadge(ok,txt){
+ const el=document.getElementById('saveBadge');if(!el)return;
+ el.textContent=txt;el.style.background=ok?'rgba(30,110,60,.85)':'rgba(190,40,40,.95)';el.style.display='block';
+}
 function saveToStorage(){
  if(!originalData)return false;
+ if(window.__preview)return false; // on n'enregistre jamais un aperçu de remaniement
  writeTypeMemory();
- try{localStorage.setItem(SAVE_KEY,JSON.stringify(buildPlanSnapshot()));return true;}catch(e){return false;}
+ try{
+  const txt=JSON.stringify(buildPlanSnapshot());
+  localStorage.setItem(SAVE_KEY,txt);
+  const t=new Date().toLocaleTimeString('fr-FR');
+  showSaveBadge(true,'💾 Enregistré à '+t+' — '+buildings.length+' éléments, '+Math.round(txt.length/1024)+' Ko');
+  saveWarned=false;
+  return true;
+ }catch(e){
+  showSaveBadge(false,'⚠️ NON ENREGISTRÉ (mémoire du navigateur pleine ou bloquée) — clique sur « Exporter » pour garder ta cité');
+  if(!saveWarned){saveWarned=true;alert("⚠️ Impossible d'enregistrer dans la mémoire du navigateur (elle est pleine ou bloquée).\n\nTes dernières modifications seront perdues à la fermeture.\nClique sur « Exporter » pour sauvegarder ta cité dans un fichier.")}
+  return false;
+ }
 }
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveToStorage()});
+window.addEventListener('pagehide',()=>{saveToStorage()});
 
 function loadFromParsed(data){
  if(data&&data._plan){const src=data.source||{};originalData=src;loadCity(src,data.configs,data.positions,data.generatedRoads,data.unlockedAreas,data.added,data.addedTypes,data.removed);return;}
@@ -346,7 +392,7 @@ document.getElementById('btnPaste').onclick=()=>{document.getElementById('pasteM
 document.getElementById('btnPasteCancel').onclick=()=>{document.getElementById('pasteModal').style.display='none'};
 document.getElementById('btnPasteOk').onclick=()=>{const t=document.getElementById('pasteArea').value;if(!t.trim()){alert('Vide.');return}try{loadFromParsed(parseInput(t));document.getElementById('pasteModal').style.display='none'}catch(err){alert('Erreur : '+err.message)}};
 document.getElementById('btnClearSave').onclick=()=>{if(confirm('Effacer la sauvegarde ?')){localStorage.removeItem(SAVE_KEY);alert('Sauvegarde effacée.')}};
-document.getElementById('btnSave').onclick=()=>{if(!originalData){alert("Rien à enregistrer.");return;}saveToStorage();alert("Enregistré.");};
+document.getElementById('btnSave').onclick=()=>{if(!originalData){alert("Rien à enregistrer.");return;}if(window.__preview){alert("Ferme d'abord la fenêtre des remaniements.");return}if(saveToStorage())alert("Enregistré : "+buildings.length+" éléments.")};
 document.getElementById('btnExport').onclick=()=>{if(!originalData){alert("Rien à exporter.");return;}saveToStorage();const blob=new Blob([JSON.stringify(buildPlanSnapshot())],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='cite_sauvegarde.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 
 /* ---------- CHARGEMENT D'UNE CITÉ ---------- */
@@ -489,7 +535,7 @@ function openPanel(key){
  document.getElementById('panelTitle').textContent=t.name;
  document.getElementById('panelInfo').textContent=`${t.count} élément(s) | ${t.type}`;
  document.getElementById('fName').value=t.name;
- document.getElementById('fFamily').value=t.family||'';
+ document.getElementById('fFamily').value=(t.family==='Culture')?(t.needsRoad?'Culture (/Résidentiel)':'Culture (/Résidentiel) Autonome'):(t.family||'');
  if(!(selectedBuilding&&selectedBuilding.entityId===key)){selectedBuilding=buildings.find(b=>b.entityId===key)||null;}
  document.getElementById('fLevel').value = selectedBuilding ? selectedBuilding.level : (t.level || 1);
  document.getElementById('fLocked').checked=t.locked||false;
@@ -607,7 +653,14 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&extPlacing)stopExtP
 {
  const _drawBase=draw;
  draw=function(){
-  _drawBase();
+   _drawBase();
+  if(window.__reserveZone){
+   const R=window.__reserveZone;ctx.save();
+   ctx.fillStyle='rgba(52,152,219,0.18)';ctx.fillRect(offsetX+R.x*scale,offsetY+R.y*scale,R.w*scale,R.h*scale);
+   ctx.setLineDash([8,5]);ctx.strokeStyle='#3498db';ctx.lineWidth=2;ctx.strokeRect(offsetX+R.x*scale,offsetY+R.y*scale,R.w*scale,R.h*scale);
+   ctx.setLineDash([]);ctx.fillStyle='#9fd3f7';ctx.font='bold 12px sans-serif';ctx.fillText('Place réservée : prochain portail',offsetX+R.x*scale+6,offsetY+R.y*scale+16);
+   ctx.restore();
+  }
   if(!extPlacing)return;
   const ok=extCellOk(extPlacing.x,extPlacing.y);
   const sx=offsetX+extPlacing.x*scale,sy=offsetY+extPlacing.y*scale,sz=5*scale;
@@ -669,7 +722,12 @@ document.getElementById('btnDeleteBuilding').onclick=()=>{
 };
 
 /* ---------- CHEMINS D'ENSEMBLE ---------- */
-function familyOf(b){return (types[b.entityId]&&types[b.entityId].family)||b.family||''}
+function familyOf(b){
+ const f=(types[b.entityId]&&types[b.entityId].family)||b.family||'';
+ // l'ancienne catégorie « Culture » n'existe plus : elle devient Résidentiel (avec rue) ou Autonome (sans rue) selon la case « Relier à l'HdV ? »
+ if(f==='Culture'){const t=types[b.entityId];const need=t?t.needsRoad:b.needsRoad;return need?'Culture (/Résidentiel)':'Culture (/Résidentiel) Autonome'}
+ return f;
+}
 function portalPlaced(){
  return buildings.some(b=>{
   if(familyOf(b)!=='Portail/règlement')return false;
@@ -836,7 +894,7 @@ function draw(){
   const drawColor=colorForBuilding(b);
   ctx.fillStyle=drawColor;ctx.fillRect(b.x,b.y,b.w,b.h);
   const fam=(types[b.entityId]&&types[b.entityId].family)||b.family;
-  ctx.strokeStyle=(fam==="Chemin d'ensemble")?'rgba(0,0,0,0.6)':'rgba(0,0,0,0.3)';ctx.lineWidth=0.04;ctx.strokeRect(b.x,b.y,b.w,b.h);
+  if(isFluoFamily(fam)){ctx.strokeStyle='rgba(0,0,0,0.85)';ctx.lineWidth=0.08}else{ctx.strokeStyle='rgba(0,0,0,0.3)';ctx.lineWidth=0.04}ctx.strokeRect(b.x,b.y,b.w,b.h);
  }
  for(const b of buildings){
   if(b._isolated){
@@ -996,6 +1054,10 @@ canvas.addEventListener('wheel',e=>{
    OPTIMISATION V16.0 — rues partagées entre deux rangées de bâtiments
    ============================================================ */
 const CHEMIN="Chemin d'ensemble";
+const FAM_PORTAIL='Portail/règlement';
+const FAMS_RAIL=['Portail / Marchandises'];
+const FAM_CULT_RES='Culture (/Résidentiel)';
+const FAM_AUTO='Culture (/Résidentiel) Autonome';
 function isImmutable(b){
  if(b.type==='guardian')return true;
  if(b.locked)return true;
@@ -1077,11 +1139,97 @@ function planCityVariant(P,opt){
   fill(hu,hv,hw,hh,2);
  }
 
- if(hasRoaded){
+
+ let portalRect=null,placedSat=[],reservedCell=-1;
+ /* Ensemble du portail : le portail, une ligne de rails droite qui part de lui,
+    et les mines / fonderies posées de chaque côté de cette ligne (elles touchent les rails). */
+ function placeCluster(){
+  const pd=dimT(P.cluster.portal.w,P.cluster.portal.h),pw=pd[0],ph=pd[1];
+  const sats=P.cluster.sats.map(o=>{const d=dimT(o.w,o.h);return {id:o.id,w:d[0],h:d[1]}}).sort((a,b)=>b.w*b.h-a.w*a.h);
+  const cands=[];
+  for(let v=0;v+ph<=H;v++)for(let u=0;u+pw<=W;u++){
+   if(!fits(u,v,pw,ph))continue;
+   cands.push({u:u,v:v,sc:(u+pw)+(v+ph)+rnd()*4});
+  }
+  cands.sort((a,b)=>b.sc-a.sc);
+  const G0=G.slice();
+  function arrange(pu,pv,off,dir){
+   const c=pu+off;if(c<0||c>=W)return null;
+   const step=dir==='d'?1:-1,r0=dir==='d'?pv+ph:pv-1;
+   const ptr={L:r0,R:r0},placed=[],tmp=[];let far=r0;
+   const undo=()=>{for(const t of tmp)fill(t.u,t.v,t.w,t.h,1)};
+   for(const it of sats){
+    const sides=(ptr.L*step<=ptr.R*step)?['L','R']:['R','L'];
+    let ok=false;
+    for(const sd of sides){
+     const x=sd==='R'?c+1:c-it.w;
+     const y=dir==='d'?ptr[sd]:ptr[sd]-it.h+1;
+     if(!fits(x,y,it.w,it.h))continue;
+     fill(x,y,it.w,it.h,2);tmp.push({u:x,v:y,w:it.w,h:it.h});
+     placed.push({it:it,u:x,v:y,w:it.w,h:it.h});
+     const endRow=dir==='d'?y+it.h-1:y;
+     ptr[sd]=dir==='d'?y+it.h:y-1;
+     if((endRow-far)*step>0)far=endRow;
+     ok=true;break;
+    }
+    if(!ok){undo();return null}
+   }
+   const rails=[];
+   for(let r=r0;(r-far)*step<=0;r+=step){
+    if(r<0||r>=H||G[idx(c,r)]!==1){undo();return null}
+    rails.push(idx(c,r));
+   }
+   undo();
+   return {placed:placed,rails:rails};
+  }
+  for(let k=0;k<Math.min(60,cands.length);k++){
+   const c=cands[k];
+   G.set(G0);
+   fill(c.u,c.v,pw,ph,2);
+   // rue qui relie le portail au réseau, tracée tout de suite
+   let anyR=false;for(let i=0;i<W*H;i++)if(G[i]===3){anyR=true;break}
+   if(anyR){const pth=connectPath(perimFree(c.u,c.v,pw,ph));if(pth)for(const i of pth)G[i]=3}
+   let bestA=null;
+   for(const dir of ['d','u'])for(const off of [0,Math.floor((pw-1)/2),pw-1]){
+    const a=arrange(c.u,c.v,off,dir);
+    if(a&&(!bestA||a.rails.length<bestA.rails.length))bestA=a;
+   }
+   if(!bestA)continue;
+   for(const t of bestA.placed){fill(t.u,t.v,t.w,t.h,2);placedSat.push(t)}
+   for(const i of bestA.rails)G[i]=4;
+   portalRect={u:c.u,v:c.v,w:pw,h:ph};
+   return true;
+  }
+  G.set(G0);
+  return false;
+ }
+
+ const needNet=hasRoaded||!!P.cluster;
+ if(needNet){
   const colFree=c=>{if(c<0||c>=W)return false;for(let j=0;j<hh;j++){const v=hv+j;if(v>=0&&v<H&&G[idx(c,v)]===1)return true}return false};
   let us=hu+hw;
   if(!colFree(us))us=hu-1;
   if(colFree(us))for(let v=0;v<H;v++){if(G[idx(us,v)]===1)G[idx(us,v)]=3}
+ }
+ // ensemble du portail : posé juste après la rue-colonne, avec sa rue de liaison tracée tout de suite
+ if(P.cluster&&!placeCluster())return null;
+
+ // place gardée libre pour le prochain portail (état 6 : personne ne peut s'y poser)
+ let reserveRect=null,reserveOk=true;
+ if(P.reserve){
+  const rd=dimT(P.reserve.w,P.reserve.h),rw=rd[0],rh=rd[1];
+  const hc={u:hu+hw/2,v:hv+hh/2},pc=portalRect?{u:portalRect.u+portalRect.w/2,v:portalRect.v+portalRect.h/2}:null;
+  let bestR=null;
+  for(let v=0;v+rh<=H;v++)for(let u=0;u+rw<=W;u++){
+   if(!fits(u,v,rw,rh))continue;
+   const cu=u+rw/2,cv=v+rh/2;
+   let sc=Math.abs(cu-hc.u)+Math.abs(cv-hc.v);
+   if(pc)sc+=Math.abs(cu-pc.u)+Math.abs(cv-pc.v);
+   sc+=rnd()*2;
+   if(!bestR||sc>bestR.sc)bestR={u:u,v:v,sc:sc};
+  }
+  if(bestR){fill(bestR.u,bestR.v,rw,rh,6);reserveRect={u:bestR.u,v:bestR.v,w:rw,h:rh}}
+  else reserveOk=false;
  }
 
  function connectPath(src){
@@ -1154,7 +1302,7 @@ function planCityVariant(P,opt){
 
  let adj=false;
  eachPerim(hu,hv,hw,hh,(x,y)=>{if(G[idx(x,y)]===3)adj=true});
- if(!adj&&hasRoaded){
+ if(!adj&&needNet){
   let anyRoad=false;for(let i=0;i<W*H;i++)if(G[i]===3){anyRoad=true;break}
   if(anyRoad){
    const p=connectPath(perimFree(hu,hv,hw,hh));
@@ -1182,6 +1330,19 @@ function planCityVariant(P,opt){
   placedRoaded=keep;
  }
  reconcile();
+
+ // ---- 5b. bâtiments VERROUILLÉS qui demandent une rue (ex. le portail) : on leur amène une rue
+ const fixedRects=(P.fixedRoaded||[]).map(f=>{const r=rectT(f.x,f.y,f.w,f.h),d=dimT(f.w,f.h);return {u:r.u,v:r.v,w:d[0],h:d[1]}});
+ if(portalRect)fixedRects.push({u:portalRect.u,v:portalRect.v,w:portalRect.w,h:portalRect.h});
+ if(reservedCell>=0)G[reservedCell]=1;
+ let unservedFixed=0;
+ for(const f of fixedRects){
+  if(touchesRoad(f.u,f.v,f.w,f.h))continue;
+  let anyRoad=false;for(let i=0;i<W*H;i++)if(G[i]===3){anyRoad=true;break}
+  const src=perimFree(f.u,f.v,f.w,f.h);
+  const path=anyRoad?connectPath(src):null;
+  if(path){for(const i of path)G[i]=3}else unservedFixed++;
+ }
 
  function placeRoaded(it){
   const w=it.w,h=it.h;
@@ -1227,7 +1388,7 @@ function planCityVariant(P,opt){
  for(const it of roadless){if(!placeRoadless(it))unplaced.push({it:it,roaded:false})}
 
  function pruneRoads(){
-  const rects=placedRoaded.map(p=>({u:p.u,v:p.v,w:p.w,h:p.h}));rects.push({u:hu,v:hv,w:hw,h:hh});
+  const rects=placedRoaded.map(p=>({u:p.u,v:p.v,w:p.w,h:p.h}));rects.push({u:hu,v:hv,w:hw,h:hh});for(const f of fixedRects)rects.push(f);
   const dep=new Map(),cnt=new Int32Array(rects.length);
   rects.forEach((r,ri)=>{eachPerim(r.u,r.v,r.w,r.h,(x,y)=>{const i=idx(x,y);if(G[i]===3){cnt[ri]++;let a=dep.get(i);if(!a){a=[];dep.set(i,a)}a.push(ri)}})});
   const hdvRect={u:hu,v:hv,w:hw,h:hh};
@@ -1245,7 +1406,7 @@ function planCityVariant(P,opt){
   }
  }
  function shaveRoads(){
-  const rects=placedRoaded.map(p=>({u:p.u,v:p.v,w:p.w,h:p.h}));rects.push({u:hu,v:hv,w:hw,h:hh});
+  const rects=placedRoaded.map(p=>({u:p.u,v:p.v,w:p.w,h:p.h}));rects.push({u:hu,v:hv,w:hw,h:hh});for(const f of fixedRects)rects.push(f);
   const list=[];for(let i=0;i<W*H;i++)if(G[i]===3)list.push(i);
   for(let a=list.length-1;a>0;a--){const b=Math.floor(rnd()*(a+1));const t=list[a];list[a]=list[b];list[b]=t}
   let total=list.length;
@@ -1277,13 +1438,18 @@ function planCityVariant(P,opt){
 
  const positions=new Map();
  if(!P.th.fixed){const b=rectBack(hu,hv,hw,hh);positions.set(P.th.id,{x:b.x,y:b.y})}
- for(const p of placedRoaded.concat(placedRoadless)){const b=rectBack(p.u,p.v,p.w,p.h);positions.set(p.it.id,{x:b.x,y:b.y})}
+ for(const p of placedRoaded.concat(placedRoadless,placedSat)){const b=rectBack(p.u,p.v,p.w,p.h);positions.set(p.it.id,{x:b.x,y:b.y})}
+ if(portalRect){const b=rectBack(portalRect.u,portalRect.v,portalRect.w,portalRect.h);positions.set(P.cluster.portal.id,{x:b.x,y:b.y})}
+ const railCells=[];for(let i=0;i<W*H;i++)if(G[i]===4){const o=inv(i%W,(i/W)|0);railCells.push(o[0]+','+o[1])}
  const roadCells=[];let minU=1e9,minV=1e9,maxU=-1,maxV=-1;
  const grow=(u,v,w,h)=>{minU=Math.min(minU,u);minV=Math.min(minV,v);maxU=Math.max(maxU,u+w-1);maxV=Math.max(maxV,v+h-1)};
  for(let i=0;i<W*H;i++)if(G[i]===3){const u=i%W,v=(i/W)|0;const o=inv(u,v);roadCells.push(o[0]+','+o[1]);grow(u,v,1,1)}
  grow(hu,hv,hw,hh);
- for(const p of placedRoaded.concat(placedRoadless))grow(p.u,p.v,p.w,p.h);
- return {positions:positions,roadCells:roadCells,unplaced:unplaced.map(o=>o.it.id),emprise:(maxU-minU+1)*(maxV-minV+1)};
+ for(const p of placedRoaded.concat(placedRoadless,placedSat))grow(p.u,p.v,p.w,p.h);
+ if(portalRect)grow(portalRect.u,portalRect.v,portalRect.w,portalRect.h);
+ let reserve=null;
+ if(reserveRect){const b=rectBack(reserveRect.u,reserveRect.v,reserveRect.w,reserveRect.h);reserve={x:b.x,y:b.y,w:P.reserve.w,h:P.reserve.h}}
+ return {positions:positions,reserve:reserve,reserveOk:reserveOk,roadCells:roadCells,railCells:railCells,unplaced:unplaced.map(o=>o.it.id),unservedFixed:unservedFixed,emprise:(maxU-minU+1)*(maxV-minV+1)};
 }
 
 function verifyPlan(P,r){
@@ -1292,6 +1458,12 @@ function verifyPlan(P,r){
  if(!P.th.fixed){const p=r.positions.get(P.th.id);if(!p)return false;rects.push({x:p.x,y:p.y,w:P.th.w,h:P.th.h,roaded:false,hdv:true})}
  for(const it of P.roaded){const p=r.positions.get(it.id);if(p)rects.push({x:p.x,y:p.y,w:it.w,h:it.h,roaded:true})}
  for(const it of P.roadless){const p=r.positions.get(it.id);if(p)rects.push({x:p.x,y:p.y,w:it.w,h:it.h,roaded:false})}
+ let portalR=null;const satR=[];
+ if(P.cluster){
+  const pp=r.positions.get(P.cluster.portal.id);if(!pp)return false;
+  portalR={x:pp.x,y:pp.y,w:P.cluster.portal.w,h:P.cluster.portal.h,roaded:false};rects.push(portalR);
+  for(const it of P.cluster.sats){const p=r.positions.get(it.id);if(!p)return false;const q={x:p.x,y:p.y,w:it.w,h:it.h,roaded:false};satR.push(q);rects.push(q)}
+ }
  for(const q of rects){
   for(let dx=0;dx<q.w;dx++)for(let dy=0;dy<q.h;dy++){
    const k=(q.x+dx)+','+(q.y+dy);
@@ -1301,18 +1473,39 @@ function verifyPlan(P,r){
  }
  const roads=new Set(r.roadCells);
  for(const k of roads){if(!P.cells.has(k)||P.blocked.has(k)||occ.has(k))return false;occ.set(k,'r')}
- const touches=(q)=>{
+ const rails=new Set(r.railCells||[]);
+ for(const k of rails){if(!P.cells.has(k)||P.blocked.has(k)||occ.has(k))return false;occ.set(k,'l')}
+ const touches=(q,kind)=>{
+  kind=kind||'r';
   for(let dx=0;dx<q.w;dx++)for(let dy=0;dy<q.h;dy++){
    const x=q.x+dx,y=q.y+dy;
    for(const d of [[1,0],[-1,0],[0,1],[0,-1]]){
     const nx=x+d[0],ny=y+d[1];
     if(nx>=q.x&&nx<q.x+q.w&&ny>=q.y&&ny<q.y+q.h)continue;
-    if(occ.get(nx+','+ny)==='r')return true;
+    if(occ.get(nx+','+ny)===kind)return true;
    }
   }
   return false;
  };
  for(const q of rects)if(q.roaded&&!touches(q))return false;
+ if(r.reserve){
+  const R=r.reserve;
+  for(let dx=0;dx<R.w;dx++)for(let dy=0;dy<R.h;dy++){const k=(R.x+dx)+','+(R.y+dy);if(occ.has(k)||P.blocked.has(k)||!P.cells.has(k))return false}
+ }
+ let fixedOk=0,fixedTotal=(P.fixedRoaded||[]).length;
+ for(const f of (P.fixedRoaded||[]))if(touches({x:f.x,y:f.y,w:f.w,h:f.h}))fixedOk++;
+ if(portalR){fixedTotal++;if(touches(portalR))fixedOk++}
+ if(fixedTotal-fixedOk!==(r.unservedFixed||0))return false;
+ if(P.cluster){
+  for(const q of satR)if(!touches(q,'l'))return false;
+  if(rails.size){
+   const seenL=new Set(),stack=[];
+   for(let dx=0;dx<portalR.w;dx++)for(let dy=0;dy<portalR.h;dy++)for(const d of [[1,0],[-1,0],[0,1],[0,-1]]){
+    const k=(portalR.x+dx+d[0])+','+(portalR.y+dy+d[1]);if(rails.has(k)&&!seenL.has(k)){seenL.add(k);stack.push(k)}}
+   while(stack.length){const c=stack.pop().split(',').map(Number);for(const d of [[1,0],[-1,0],[0,1],[0,-1]]){const k=(c[0]+d[0])+','+(c[1]+d[1]);if(rails.has(k)&&!seenL.has(k)){seenL.add(k);stack.push(k)}}}
+   if(seenL.size!==rails.size)return false;
+  }
+ }
  const hd=P.th.fixed?{x:P.th.x,y:P.th.y,w:P.th.w,h:P.th.h}:rects.find(q=>q.hdv);
  if(roads.size||rects.some(q=>q.roaded)){
   if(!touches(hd))return false;
@@ -1340,19 +1533,26 @@ function shuffleArr(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.fl
 
 async function buildGlobalOptimization(onProgress){
  const roads=buildings.filter(isRoadForOptim);
- const roadFixed=roads.filter(r=>r.locked||familyOf(r)===CHEMIN);
- const roadMovable=roads.filter(r=>!roadFixed.includes(r));
  const nonRoad=buildings.filter(b=>!isRoadForOptim(b));
+ // ensemble du portail : seulement si portail, bâtiments « par rails » ET rails sont déverrouillés
+ const portalCand=nonRoad.find(b=>familyOf(b)===FAM_PORTAIL&&!isImmutable(b))||null;
+ const satCand=nonRoad.filter(b=>FAMS_RAIL.includes(familyOf(b))&&!isImmutable(b));
+ const railMovable=roads.filter(r=>familyOf(r)===CHEMIN&&!r.locked);
+ const ensemble=!!(portalCand&&satCand.length&&railMovable.length);
+ const roadFixed=roads.filter(r=>r.locked||(familyOf(r)===CHEMIN&&!ensemble));
+ const roadMovable=roads.filter(r=>!roadFixed.includes(r)&&familyOf(r)!==CHEMIN);
+ const isFix=b=>isImmutable(b)||(!ensemble&&FAMS_RAIL.includes(familyOf(b)));
+ const inCluster=b=>ensemble&&(b.id===portalCand.id||satCand.includes(b));
  const th=findTownHall(buildings);
  if(!th)return {error:"Hôtel de ville introuvable. Clique sur ton Hôtel de Ville, mets-lui la catégorie « Basique » dans la fiche, puis enregistre."};
  if(!unlockedAreas.length)return {error:"Limites des zones débloquées non reconnues. Impossible d'optimiser."};
 
  const thFixed=isImmutable(th);
- const movable=nonRoad.filter(b=>!isImmutable(b));
- const others=movable.filter(b=>b.id!==th.id);
+ const movable=nonRoad.filter(b=>!isFix(b));
+ const others=movable.filter(b=>b.id!==th.id&&!inCluster(b));
 
  const blocked=new Set();
- for(const b of nonRoad)if(isImmutable(b))for(const k of optimizerFootprintCells(b))blocked.add(k);
+ for(const b of nonRoad)if(isFix(b))for(const k of optimizerFootprintCells(b))blocked.add(k);
  for(const r of roadFixed)for(const k of optimizerFootprintCells(r))blocked.add(k);
 
  const cellList=[...unlockedCells].map(k=>k.split(',').map(Number));
@@ -1365,8 +1565,11 @@ async function buildGlobalOptimization(onProgress){
   cells:unlockedCells,cellList:cellList,blocked:blocked,blockedList:blockedList,
   bounds:{minX,minY,maxX,maxY},
   th:{id:th.id,w:th.w,h:th.h,x:th.x,y:th.y,fixed:thFixed},
-  roaded:others.filter(b=>b.needsRoad).map(b=>({id:b.id,w:b.w,h:b.h,fam:familyOf(b)||b.type||'Autre'})),
-  roadless:others.filter(b=>!b.needsRoad).map(b=>({id:b.id,w:b.w,h:b.h,fam:familyOf(b)||b.type||'Autre'}))
+  roaded:others.filter(b=>(b.needsRoad||familyOf(b)===FAM_CULT_RES)&&familyOf(b)!==FAM_AUTO).map(b=>({id:b.id,w:b.w,h:b.h,fam:familyOf(b)||b.type||'Autre'})),
+  fixedRoaded:nonRoad.filter(b=>isFix(b)&&(b.needsRoad||familyOf(b)===FAM_CULT_RES)&&!FAMS_RAIL.includes(familyOf(b))&&familyOf(b)!==FAM_AUTO&&b.id!==th.id&&b.type!=='guardian'&&familyOf(b)!=='Donjon'&&optimizerFootprintCells(b).some(k=>unlockedCells.has(k))).map(b=>({x:b.x,y:b.y,w:b.w,h:b.h,name:b.name})),
+  reserve:(function(){const c=document.getElementById('optReserve');if(!c||!c.checked)return null;const n=Math.max(4,Math.min(16,parseInt(document.getElementById('optReserveSize').value)||8));return {w:n,h:n}})(),
+  cluster:ensemble?{portal:{id:portalCand.id,w:portalCand.w,h:portalCand.h},sats:satCand.map(b=>({id:b.id,w:b.w,h:b.h}))}:null,
+  roadless:others.filter(b=>(!b.needsRoad&&familyOf(b)!==FAM_CULT_RES)||familyOf(b)===FAM_AUTO).map(b=>({id:b.id,w:b.w,h:b.h,fam:familyOf(b)||b.type||'Autre'}))
  };
 
  const areaByFam={};
@@ -1397,10 +1600,10 @@ async function buildGlobalOptimization(onProgress){
    done++;
    if(onProgress){onProgress(done,total);await new Promise(res=>setTimeout(res,0))}
    if(!r||!verifyPlan(P,r))continue;
-   const sig=[...r.positions.entries()].map(e=>e[0]+':'+e[1].x+','+e[1].y).sort().join('|')+'#'+r.roadCells.slice().sort().join('|');
+   const sig=[...r.positions.entries()].map(e=>e[0]+':'+e[1].x+','+e[1].y).sort().join('|')+'#'+r.roadCells.slice().sort().join('|')+'#'+(r.railCells||[]).slice().sort().join('|');
    if(seen.has(sig))continue;seen.add(sig);
    let placedArea=0;
-   const byId=new Map(others.map(b=>[b.id,b]));
+   const byId=new Map(others.concat(ensemble?[portalCand].concat(satCand):[]).map(b=>[b.id,b]));
    let moved=0;
    for(const [id,p] of r.positions){
     const b=id===th.id?th:byId.get(id);
@@ -1408,18 +1611,20 @@ async function buildGlobalOptimization(onProgress){
     if(id!==th.id)placedArea+=b.w*b.h; else placedArea+=th.w*th.h;
     if(b.x!==p.x||b.y!==p.y)moved++;
    }
-   const freeAfter=unlockedCells.size-blockedInside-placedArea-r.roadCells.length;
+   const freeAfter=unlockedCells.size-blockedInside-placedArea-r.roadCells.length-(r.railCells||[]).length;
+   r.reserveAsked=!!P.reserve;
    r.moved=moved+r.unplaced.length;
    r.freeAfter=freeAfter;r.freeBefore=freeBefore;
    r.roadTilesNeeded=r.roadCells.length;r.roadTilesAvailable=stockTiles;
-   r.score=r.unplaced.length*1e6+r.roadCells.length*100+r.emprise;
+   r.railTilesNeeded=(r.railCells||[]).length;r.railTilesAvailable=ensemble?railMovable.reduce((n,x)=>n+x.w*x.h,0):0;r.ensemble=ensemble;
+   r.score=(r.unplaced.length+(r.unservedFixed||0))*1e6+((P.reserve&&!r.reserveOk)?1e5:0)+r.roadCells.length*100+(r.railCells||[]).length*30+r.emprise;
    results.push(r);
   }
  }
  tried=done;
  if(!results.length)return {error:"Je n'ai trouvé aucune disposition valide. La zone débloquée est peut-être trop petite, ou l'Hôtel de Ville est entouré de bâtiments verrouillés."};
  results.sort((a,b)=>a.score-b.score);
- return {scenarios:results.slice(0,3),roadMovable,roadFixed,movable,th,tried:done,valid:results.length};
+ return {scenarios:results.slice(0,3),roadMovable,roadFixed,movable,th,railMovable:ensemble?railMovable:[],ensemble,tried:done,valid:results.length};
 }
 
 let optimizerSession=null;
@@ -1428,18 +1633,24 @@ function restoreOptimizerSession(clear=true){
  const o=JSON.parse(optimizerSession.snapshot);
  buildings=o.b;types=o.t;unlockedAreas=o.a;unlockedCells=new Set(o.c);unlockedBounds=o.u;generatedRoads=new Set(o.g);
  selectedBuilding=null;
- if(clear)optimizerSession=null;
+ if(clear){optimizerSession=null;window.__preview=false;window.__reserveZone=null}
  computeGrid();buildList();updateStats();draw();
 }
 function materializeScenario(sc,sess){
+ window.__reserveZone=sc.reserve||null;
  for(const b of buildings){const p=sc.positions.get(b.id);if(p){b.x=p.x;b.y=p.y}}
  const rm=new Set(sess.roadMovable.map(r=>r.id));
  const stockTiles=sess.roadMovable.reduce((n,r)=>n+r.w*r.h,0);
  buildings=buildings.filter(b=>!rm.has(b.id));
+ const rr=new Set((sess.railMovable||[]).map(r=>r.id));
+ const railStock=(sess.railMovable||[]).reduce((n,r)=>n+r.w*r.h,0),tpl=(sess.railMovable||[])[0];
+ buildings=buildings.filter(b=>!rr.has(b.id));
  ensureStreetType();
  const stamp=Date.now();let n=0;
  const addRoad=(x,y)=>{const r={id:'S_OPT_'+stamp+'_'+(n++)+'_'+x+'_'+y,entityId:'S_PLAN',x,y,w:1,h:1,name:'Rue',type:'street',level:1,needsRoad:false,temp:false,duration:0,startDate:'',family:'Rue',isRoad:true,locked:false,added:true};r.color=colorForBuilding(r);buildings.push(r)};
  for(const k of sc.roadCells){const c=k.split(',').map(Number);addRoad(c[0],c[1])}
+ const addRail=(x,y)=>{const r={id:'R_OPT_'+stamp+'_'+(n++)+'_'+x+'_'+y,entityId:tpl.entityId,x,y,w:1,h:1,name:tpl.name,type:tpl.type,level:tpl.level||1,needsRoad:false,temp:false,duration:0,startDate:'',family:CHEMIN,isRoad:true,locked:false,added:true};r.color=colorForBuilding(r);buildings.push(r)};
+ if(tpl)for(const k of (sc.railCells||[])){const c=k.split(',').map(Number);addRail(c[0],c[1])}
  const unplacedB=buildings.filter(b=>sc.unplaced.includes(b.id));
  const occ=occupiedSet(new Set(unplacedB));
  for(const b of unplacedB){
@@ -1450,6 +1661,7 @@ function materializeScenario(sc,sess){
  for(let i=sc.roadCells.length;i<stockTiles;i++){
   const p=freeSpot(1,1,occ);addRoad(p.x,p.y);occ.add(p.x+','+p.y);stockN++;
  }
+ if(tpl)for(let i=(sc.railCells||[]).length;i<railStock;i++){const p=freeSpot(1,1,occ);addRail(p.x,p.y);occ.add(p.x+','+p.y)}
  for(const k in types)types[k].count=0;
  for(const b of buildings)if(types[b.entityId])types[b.entityId].count++;
  computeGrid();
@@ -1470,7 +1682,7 @@ function applyScenario(sc){
  pushRaw(session.snapshot);
  const res=materializeScenario(sc,session);
  saveToStorage();
- document.getElementById('scenarioModal').style.display='none';optimizerSession=null;
+ document.getElementById('scenarioModal').style.display='none';optimizerSession=null;window.__preview=false;saveToStorage();
  flash('⚡ Remaniement appliqué : '+sc.moved+' bâtiment(s) déplacé(s). '+(res.stock?res.stock+' rue(s) en stock à droite de la carte (hors de la cité).':'Aucune rue en trop : le plan utilise toutes tes rues.'));
 }
 let lastOptimResult=null;
@@ -1480,14 +1692,15 @@ function scenarioReportText(){
  const r=lastOptimResult;
  t+='Calcul : '+r.tried+' essais, '+r.valid+' plans valides, '+r.scenarios.length+' proposés. Rues déplaçables disponibles : '+r.scenarios[0].roadTilesAvailable+' cases. Rails/rues verrouillés (obstacles) : '+r.roadFixed.length+'\n\n';
  r.scenarios.forEach((sc,i)=>{
-  t+='REMANIEMENT '+String.fromCharCode(65+i)+' : rues utilisées '+sc.roadTilesNeeded+', cases libres '+sc.freeBefore+' -> '+sc.freeAfter+', emprise '+sc.emprise+' cases, déplacés '+sc.moved+', non placés '+sc.unplaced.length+'\n';
+  t+='REMANIEMENT '+String.fromCharCode(65+i)+' : rues utilisées '+sc.roadTilesNeeded+(sc.ensemble?', rails '+sc.railTilesNeeded+'/'+sc.railTilesAvailable:'')+', cases libres '+sc.freeBefore+' -> '+sc.freeAfter+', emprise '+sc.emprise+' cases, déplacés '+sc.moved+', non placés '+sc.unplaced.length+'\n';
   if(sc.unplaced.length){const names=sc.unplaced.map(id=>{const b=buildings.find(q=>q.id===id);return b?b.name+' '+b.w+'x'+b.h:id});t+='  Non placés : '+names.join(', ')+'\n'}
  });
  return t;
 }
 document.getElementById('btnCopyScenarios').onclick=()=>showReport('Compte rendu des remaniements',scenarioReportText());
 function showOptimizationScenarios(result){
- lastOptimResult=result;optimizerSession={snapshot:snap(),roadFixed:result.roadFixed,roadMovable:result.roadMovable};
+ window.__preview=true;
+ lastOptimResult=result;optimizerSession={snapshot:snap(),roadFixed:result.roadFixed,roadMovable:result.roadMovable,railMovable:result.railMovable||[]};
  const list=document.getElementById('scenarioList'),status=document.getElementById('scenarioStatus'),apply=document.getElementById('btnApplyScenario');
  list.innerHTML='';status.textContent='';apply.disabled=true;
  let selected=null;
@@ -1499,8 +1712,11 @@ function showOptimizationScenarios(result){
   const ecart=sc.roadTilesAvailable-sc.roadTilesNeeded;
   let t='Rues actuellement : '+sc.roadTilesAvailable+'\nRues dans ce plan : '+sc.roadTilesNeeded+'';
   t+=ecart>0?' → '+ecart+' rue(s) économisée(s), mises en stock à droite de la carte.':(ecart===0?' → autant que maintenant.':' → ⚠ '+(-ecart)+' rue(s) de PLUS que maintenant : plan moins bon.');
+  if(sc.ensemble){const re=sc.railTilesAvailable-sc.railTilesNeeded;t+='\nEnsemble du portail : '+sc.railTilesNeeded+' rail(s) utilisé(s) sur '+sc.railTilesAvailable+(re>=0?' ('+re+' en stock à droite de la carte).':' → il faudra en construire '+(-re)+' de plus.')}
+  if(sc.reserveAsked)t+=sc.reserve?'\nPlace réservée pour le prochain portail : '+sc.reserve.w+'×'+sc.reserve.h+' cases libres (cadre bleu sur la carte).':'\n⚠ Impossible de garder une place libre de cette taille dans ce plan.';
   t+='\nCases libres dans la cité : '+sc.freeBefore+' avant → '+sc.freeAfter+' après ('+(gain>=0?'+':'')+gain+').';
   t+='\nBâtiments déplacés : '+sc.moved+'.';
+  if(sc.unservedFixed)t+='\n⚠ '+sc.unservedFixed+' bâtiment(s) verrouillé(s) qui demandent une rue n\'ont pas pu en recevoir une.';
   if(sc.unplaced.length)t+='\n⚠ '+sc.unplaced.length+' bâtiment(s) n\'ont pas trouvé de place : ils sont rangés à droite de la carte, en rouge.';
   desc.style.whiteSpace='pre-line';desc.textContent=t;
   const view=document.createElement('button');view.textContent='Voir sur la carte';
@@ -1513,6 +1729,8 @@ function showOptimizationScenarios(result){
 document.getElementById('btnCloseScenarios').onclick=()=>{restoreOptimizerSession();document.getElementById('scenarioModal').style.display='none';};
 document.getElementById('btnOptimize').onclick=async()=>{
  if(!buildings.length){alert("Rien à optimiser : charge d'abord une cité.");return;}
+ window.__reserveZone=null;
+ try{localStorage.setItem('opt_reserve',JSON.stringify({on:document.getElementById('optReserve').checked,n:document.getElementById('optReserveSize').value}))}catch(e){}
  const btn=document.getElementById('btnOptimize');btn.disabled=true;
  try{
   const result=await buildGlobalOptimization((i,n)=>{btn.textContent='⏳ '+Math.round(i/n*100)+'%';});
@@ -1560,6 +1778,10 @@ document.getElementById('btnOptimize').onclick=async()=>{
 
 resize();
 try{const saved=localStorage.getItem(SAVE_KEY);if(saved){loadFromParsed(JSON.parse(saved))}}catch(err){console.error(err)}
+try{const o=JSON.parse(localStorage.getItem('opt_reserve')||'null');if(o){document.getElementById('optReserve').checked=!!o.on;document.getElementById('optReserveSize').value=o.n||8;document.getElementById('optReserveSize2').textContent=o.n||8}}catch(e){}
+document.getElementById('optReserveSize').addEventListener('input',()=>{document.getElementById('optReserveSize2').textContent=document.getElementById('optReserveSize').value});
+document.getElementById('fFamily').addEventListener('change',()=>{const f=document.getElementById('fFamily').value;if(f===FAM_AUTO)document.getElementById('fRoad').value='false';else if(f===FAM_CULT_RES)document.getElementById('fRoad').value='true'});
 </script>
+<div id="saveBadge" style="display:none;position:fixed;left:8px;bottom:8px;z-index:60;color:#fff;font-size:12px;padding:4px 10px;border-radius:12px;pointer-events:none"></div>
 </body>
 </html>
