@@ -420,7 +420,7 @@
                 <h1>Artisanat & Gardiens</h1>
                 <div class="subtitle">Suivi des stocks, statuts colorés & Analyse Coach</div>
             </div>
-            <div style="display:flex; gap:10px; align-items:center;">
+            <div style="display:flex; gap:10px; align-items:center;"><button class="secondary" onclick="location.href='Elvenar_Dashboard_Joueur.html'">⬅ Tableau de bord</button>
                 <label style="font-size:12px; color:var(--accent);"><b>🎉 Événement en cours ?</b></label>
                 <select style="width:auto; font-size:12px; padding:4px;" onchange="toggleEvent(this.value)">
                     <option value="false" ${!state.eventActif ? 'selected' : ''}>❌ Non</option>
