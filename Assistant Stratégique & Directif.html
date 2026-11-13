@@ -1001,7 +1001,7 @@
         const controlsDiv = document.createElement("div");
         controlsDiv.style.cssText = "display: flex; gap: 15px; align-items: center; flex-wrap: wrap; font-size: 13px;";
         
-        let htmlSel = `<label title="Permet de basculer l'assistant vers l'ère sur laquelle se trouve ta cité pour adapter les calculateurs."><b>Chapitre :</b></label><select id="selChapitre">`;
+        let htmlSel = `<button onclick="location.href='Elvenar_Dashboard_Joueur.html'" style="background:#273d2b;color:#e2ebd8;border:1px solid #458a57;padding:6px 10px;border-radius:6px;cursor:pointer;margin-right:10px;">⬅ Tableau de bord</button><label title="Permet de basculer l'assistant vers l'ère sur laquelle se trouve ta cité pour adapter les calculateurs."><b>Chapitre :</b></label><select id="selChapitre">`;
         for (let i = 6; i <= 16; i++) {
             const nomChap = TRANSITIONS_CHAPITRES[i] ? TRANSITIONS_CHAPITRES[i].nomSuivant.replace("Chapitre " + (i+1) + " : ", "") : "Ère " + i;
             htmlSel += `<option value="${i}" ${i === state.chapitre ? 'selected' : ''}>Ch. ${i} (${nomChap})</option>`;
