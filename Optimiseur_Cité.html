@@ -349,6 +349,19 @@ function writeTypeMemory(){
   for(const k in types){const t=types[k];if(t.configured)mem[k]={name:t.name,family:t.family||'',w:t.w,h:t.h,nextW:t.nextW,nextH:t.nextH,needsRoad:t.needsRoad,temp:t.temp,duration:t.duration,startDate:t.startDate,locked:t.locked,level:t.level};}
   localStorage.setItem(TYPES_KEY,JSON.stringify(mem));}catch(e){}
 }
+/* Un bâtiment dont l'identifiant a changé (nouvel âge, niveau…) reprend les réglages d'un « frère » déjà renseigné :
+   même identifiant sans les nombres de fin (ex. « …_Residential_3 » et « …_Residential_4 »). */
+function baseEntityId(id){return String(id).replace(/(_\d+)+$/,'')}
+function siblingMemory(entityId){
+ try{
+  const mem=readTypeMemory(),base=baseEntityId(entityId);
+  if(!base)return null;
+  for(const k in mem){
+   if(k!==entityId&&baseEntityId(k)===base){const v=Object.assign({},mem[k]);v.configured=false;return v}
+  }
+ }catch(e){}
+ return null;
+}
 function applyTypeMemory(){
  const mem=readTypeMemory();
  for(const k in mem){if(!types[k]||types[k].configured)continue;const t=types[k],v=mem[k];
@@ -422,7 +435,7 @@ function loadCity(data,savedConfigs,savedPositions,savedRoadList,savedAreas,save
   if(usedIds.has(String(uniqueId))) uniqueId = entityId+'_'+x+'_'+y+'_'+i;
   usedIds.add(String(uniqueId));
 
-  const mem = readTypeMemory()[entityId] || {};
+  const mem = readTypeMemory()[entityId] || siblingMemory(entityId) || {};
   const realW = Number(mem.w) || Number(s.width) || Number(s.w) || 1;
   const realH = Number(mem.h) || Number(s.height) || Number(s.h) || 1;
   const realFam = mem.family || (isRoad ? 'Rue' : (isOffGrid ? 'Donjon' : ''));
@@ -844,6 +857,8 @@ function reportContext(){
  const th=findTownHall(buildings);
  let t='CITÉ : '+buildings.length+' éléments, zone débloquée '+unlockedCells.size+' cases ('+unlockedAreas.length+' zone(s))\n';
  t+='HdV trouvé : '+(th?th.name+' '+th.w+'x'+th.h+' en ('+th.x+','+th.y+')'+(isImmutable(th)?' [fixe]':''):'NON')+'\n';
+ const todo=Object.keys(types).filter(k=>!types[k].configured&&types[k].family!=='Rue'&&types[k].family!=='Donjon');
+ t+='Types encore à renseigner : '+todo.length+(todo.length?' — '+todo.slice(0,25).map(k=>k+' ('+types[k].count+')').join(', ')+(todo.length>25?'…':''):'')+'\n';
  t+='Par catégorie (nombre, cases, dont verrouillés) :\n';
  for(const f of Object.keys(cnt).sort())t+='  - '+f+' : '+cnt[f].n+', '+cnt[f].cases+' cases, '+cnt[f].fixes+' verrouillé(s)\n';
  const sansRoute=buildings.filter(b=>!isRoadForOptim(b)&&!b.needsRoad&&b.type!=='guardian');
