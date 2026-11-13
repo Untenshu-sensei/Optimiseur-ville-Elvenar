@@ -35,7 +35,7 @@ function prof(){const m=/[#&]p=([^&]+)/.exec(location.hash);if(m)try{return JSON
  try{const d=JSON.parse(localStorage.getItem("elvDash"));if(d.p[d.cur])return{profil:d.cur,...d.p[d.cur]}}catch(e){}return null}
 const PR=prof();function toolbar(){const A=window.__A;const sv=()=>{applyAcc(A);try{localStorage.setItem("elvAcc",JSON.stringify(A))}catch(e){}};const mk=(t,f,title)=>{const b=el("button",{cls:"s",title},t);b.onclick=f;return b};
  return el("div",{cls:"card row"},mk("⬅ Tableau de bord",()=>{location.href=DASH}),mk("A−",()=>{A.fs=Math.max(12,A.fs-2);sv()},"Texte plus petit"),mk("A+",()=>{A.fs=Math.min(30,A.fs+2);sv()},"Texte plus grand"),mk("🔊 Lire cette page",speak,"Lire à voix haute (cliquer de nouveau pour arrêter)"),mk("◐ Contraste",()=>{A.hc=!A.hc;sv()},"Contraste élevé"))}
-const DASH="Elvenar_Dashboard_Joueur_v0.9.html";
+const DASH="Elvenar_Dashboard_Joueur.html";
 window.__A={...ACC0,...(()=>{try{return(PR&&PR.acc)||JSON.parse(localStorage.getItem("elvAcc"))||{}}catch(e){return{}}})()};applyAcc(window.__A);
 let S={lvl:1,race:PR&&PR.race||"elfes",done:{},R:"06:00",st:"",dur:"",stock:"",need:"",sets:"",extra:""};
 try{S={...S,...JSON.parse(localStorage.getItem("elvAcad")||"{}")};if(PR&&PR.race)S.race=PR.race}catch(e){}
