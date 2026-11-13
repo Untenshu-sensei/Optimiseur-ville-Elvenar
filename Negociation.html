@@ -355,7 +355,7 @@ footer { margin-top: 1.5rem; color: var(--muted); font-size: 0.85rem; }
 <div id="elvbar" style="position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:#7a4b1e;color:#fff">
 <button data-a="dash">⬅ Tableau de bord</button><button data-a="m">A−</button><button data-a="p">A+</button><button data-a="v">🔊 Lire</button><button data-a="c">◐ Contraste</button></div>
 <style>#elvbar button{font:inherit;padding:6px 10px;border:0;border-radius:6px;background:#fff3;color:#fff;cursor:pointer}html.hc{filter:invert(1) hue-rotate(180deg)}</style>
-<script>(function(){var A={fs:16,hc:false},DASH="Elvenar_Dashboard_Joueur_v0.9.html";
+<script>(function(){var A={fs:16,hc:false},DASH="Elvenar_Dashboard_Joueur.html";
 try{var m=/[#&]p=([^&]+)/.exec(location.hash);var P=m?JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1]))))):null;var L=JSON.parse(localStorage.getItem("elvAcc")||"{}");var a=(P&&P.acc)||L||{};if(a.fs)A.fs=a.fs;A.hc=!!a.hc}catch(e){}
 function ap(){document.documentElement.style.fontSize=(A.fs/16*100)+"%";document.documentElement.classList.toggle("hc",A.hc);try{localStorage.setItem("elvAcc",JSON.stringify(A))}catch(e){}}ap();
 document.getElementById("elvbar").addEventListener("click",function(e){var k=e.target.getAttribute&&e.target.getAttribute("data-a");if(!k)return;
