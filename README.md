@@ -1,10 +1,8 @@
 # 🏰 Boîte à Outils Elvenar — Confrérie
 
-Bienvenue sur l'espace d'optimisation de notre confrérie ! Retrouvez ci-dessous tous nos assistants interactifs conçus pour vous faire gagner du temps et économiser vos ressources.
+Bienvenue sur l'espace d'optimisation de notre propre jeu ! Retrouvez ci-dessous tous nos assistants interactifs conçus pour vous faire gagner du temps et économiser vos ressources.
 
 ---
-
-🛠 **Nos Assistants disponibles :**
 
 🛠 **Nos Assistants disponibles :**
 
@@ -17,4 +15,5 @@ Bienvenue sur l'espace d'optimisation de notre confrérie ! Retrouvez ci-dessous
 - ⚔️ [Assistant Combats](Combats.html)
 
 ---
+
 💡 *Tous les outils fonctionnent directement dans votre navigateur web, sur PC comme sur smartphone.*
