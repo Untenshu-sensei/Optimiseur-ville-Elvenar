@@ -10,8 +10,10 @@ Bienvenue sur l'espace d'optimisation de notre confrérie ! Retrouvez ci-dessous
 * 🧪 [Académie](Academie.html)
 * 🔨 [Artisanat](Artisanat.html)
 * 👑 [Assistant Stratégique & Directif](Assistant%20Stratégique%20%26%20Directif.html)
+⚡ Module Tactique Express
 * 🤝 [Assistant Négociations](Negociation.html)
 * ⚔️ [Assistant Combats](Combats.html)
+
 
 ---
 💡 *Tous les outils fonctionnent directement dans votre navigateur web, sur PC comme sur smartphone.*
