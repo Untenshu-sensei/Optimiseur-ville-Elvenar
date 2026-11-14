@@ -6,11 +6,13 @@ Bienvenue sur l'espace d'optimisation de notre confrérie ! Retrouvez ci-dessous
 
 🛠 **Nos Assistants disponibles :**
 
+🛠 **Nos Assistants disponibles :**
+
 - 📐 [Optimiseur de Cité](Optimiseur_Cité.html)
 - 🧪 [Académie](Academie.html)
 - 🔨 [Artisanat](Artisanat.html)
-- 👑 [Assistant Stratégique & Directif]
-- ⚡ [Module Tactique Express](Module_Tactique_Express.html) 
+- 👑 [Assistant Stratégique & Directif](Assistant_Strategique.html)
+- ⚡ [Module Tactique Express](Module_Tactique_Express.html)
 - 🤝 [Assistant Négociations](Negociation.html)
 - ⚔️ [Assistant Combats](Combats.html)
 
