@@ -10,7 +10,7 @@ Bienvenue sur l'espace d'optimisation de notre propre jeu ! Retrouvez ci-dessous
 - 🧪 [Académie](Academie.html)
 - 🔨 [Artisanat](Artisanat.html)
 - 👑 [Assistant Stratégique & Directif](Assistant_Strategique.html)
-- ⚡ [Module Tactique Express](Module_Tactique_Express.html)
+- ⚡ [Module Tactique Express](Module%20Tactique%20Express.html)
 - 🤝 [Assistant Négociations](Negociation.html)
 - ⚔️ [Assistant Combats](Combats.html)
 
